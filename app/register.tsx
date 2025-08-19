@@ -173,6 +173,6 @@ const styles = StyleSheet.create({
   },
 label: {
     marginBottom: 10, 
-    color: "#5692B7",
+    color: "#ffffffff",
   },
 });
