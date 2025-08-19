@@ -11,6 +11,12 @@ export default function ForgotPasswordScreen() {
       Alert.alert("Erro", "Por favor, insira seu email.");
       return;
     }
+
+    if (!email.includes("@")) {
+      Alert.alert("Erro", "E-mail inválido. Certifique-se de incluir '@'.");
+      return;
+    }
+
     // Aqui vai a lógica de envio do email
     Alert.alert("Sucesso", "Um link de redefinição foi enviado para seu email.");
   };
@@ -28,6 +34,7 @@ export default function ForgotPasswordScreen() {
       <Text style={styles.subtitle}>Preencha o campo para recuperar sua conta</Text>
 
       {/* Campo de email */}
+      <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -75,6 +82,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
+  label: {
+    alignSelf: "flex-start",
+    marginBottom: 5,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#5692B7",
+  },
   input: {
     width: "100%",
     height: 50,
@@ -82,7 +96,7 @@ const styles = StyleSheet.create({
     borderColor: "#0057C9",
     borderRadius: 8,
     paddingHorizontal: 15,
-    marginBottom: 15,
+    marginBottom: 20,
     backgroundColor: "#fff",
     color: "#000",
   },
