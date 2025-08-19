@@ -1,36 +1,50 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
-import { View } from "react-native";
+import { Tabs } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarBackground: () => <View style={{ flex: 1, backgroundColor: "#fafbfe" }} />, tabBarActiveTintColor: '#0D6EFD' }}>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#5692B7",
+        tabBarInactiveTintColor: "#999",
+        tabBarStyle: { backgroundColor: "#000", borderTopWidth: 0 },
+      }}
+    >
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Início',
-          tabBarIcon: ({ color }) => <FontAwesome size={22} name="home" color={color} />,
+          title: "Início",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="home" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="diary"
         options={{
-          title: 'Diário',
-          tabBarIcon: ({ color }) => <FontAwesome size={22} name="book" color={color} />,
+          title: "Diário",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="book" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="news"
         options={{
-          title: 'Notícias',
-          tabBarIcon: ({ color }) => <FontAwesome size={22} name="bell" color={color} />,
+          title: "Notícias",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="article" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
-          title: 'Mais',
-          tabBarIcon: ({ color }) => <FontAwesome size={22} name="bars" color={color} />,
+          title: "Mais",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="menu" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
