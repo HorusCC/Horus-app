@@ -1,27 +1,32 @@
 // app/(tabs)/Nutrition.tsx
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, FlatList, Dimensions } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
+import { useMacros } from "../contexts/MacroContext";
 
 interface DonutData {
   name: string;
-  value: number; // quantidade em gramas ou Kcal
+  value: number;
   color: string;
-  isCalorie?: boolean; // indica se é Calorias
+  isCalorie?: boolean;
+  totalMacros?: number;
 }
 
-// Dados dos macros e calorias
-const data: DonutData[] = [
-  { name: "Carboidrato", value: 250, color: "#36A2EB" },
-  { name: "Proteína", value: 120, color: "#FF6384" },
-  { name: "Gordura", value: 70, color: "#FFCE56" },
-  { name: "Calorias", value: 250 * 4 + 120 * 4 + 70 * 9, color: "#4BC0C0", isCalorie: true },
+const screenWidth = Dimensions.get("window").width;
+
+// Dados da dieta (exemplo)
+const dietData = [
+  { title: "Café da Manhã", items: ["Ovos mexidos", "Pão integral", "Fruta"] },
+  { title: "Lanche da Manhã", items: ["Iogurte", "Mix de castanhas"] },
+  { title: "Almoço", items: ["Arroz integral", "Frango grelhado", "Salada"] },
+  { title: "Lanche da Tarde", items: ["Sanduíche natural", "Suco natural"] },
+  { title: "Jantar", items: ["Peixe grelhado", "Batata doce", "Legumes"] },
 ];
 
 const Donut = ({ item }: { item: DonutData }) => {
   const radius = 50;
   const strokeWidth = 14;
-  const totalMacros = 250 + 120 + 70;
+  const totalMacros = item.isCalorie ? 1 : item.totalMacros || 1; // evitar divisão por zero
   const percentage = item.isCalorie ? 100 : (item.value / totalMacros) * 100;
   const circumference = 2 * Math.PI * radius;
 
@@ -61,7 +66,7 @@ const Donut = ({ item }: { item: DonutData }) => {
             strokeLinecap="round"
           />
         </G>
-        {/* Percentagem no centro */}
+        {/* Percentual */}
         <SvgText
           x={radius + strokeWidth}
           y={radius + strokeWidth + 5}
@@ -74,9 +79,8 @@ const Donut = ({ item }: { item: DonutData }) => {
         </SvgText>
       </Svg>
 
-      {/* Valor abaixo da rosca */}
       <Text style={[styles.donutLabel, { color: item.color }]}>
-        {item.value}{item.isCalorie ? " Kcal" : " g"}
+        {Math.round(item.value)}{item.isCalorie ? " Kcal" : " g"}
       </Text>
       <Text style={styles.donutName}>{item.name}</Text>
     </View>
@@ -84,54 +88,51 @@ const Donut = ({ item }: { item: DonutData }) => {
 };
 
 export default function Nutrition() {
+  // Pegando valores do MacroContext
+  const { carb, protein, fat, kcal } = useMacros();
+
+  // Monta os dados do donut atualizados
+  const totalMacros = carb + protein + fat;
+  const data: DonutData[] = [
+    { name: "Carboidrato", value: carb, color: "#36A2EB", totalMacros },
+    { name: "Proteína", value: protein, color: "#FF6384", totalMacros },
+    { name: "Gordura", value: fat, color: "#FFCE56", totalMacros },
+    { name: "Calorias", value: kcal, color: "#4BC0C0", isCalorie: true },
+  ];
+
   return (
     <View style={styles.containerOuter}>
-      <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center" }}>
+      <ScrollView contentContainerStyle={{ alignItems: "center", paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
-        <View style={styles.donutRow}>
-          {data.map((item, index) => (
-            <Donut key={index} item={item} />
-          ))}
+
+        {/* Card único com borda para todos os donuts */}
+        <View style={styles.donutsCardContainer}>
+          <View style={styles.donutRow}>
+            {data.map((item, index) => (
+              <Donut key={index} item={item} />
+            ))}
+          </View>
         </View>
 
-        {/* Seção de Dieta - estilo vidro premium */}
-        <View style={styles.dietSection}>
-          <Text style={styles.dietTitle}>Dieta Recomendada</Text>
-          <View style={styles.dietItem}>
-            <Text style={styles.dietName}>Café da Manhã:</Text>
-            <Text style={styles.dietDesc}>-Ovos mexidos ou omelete com espinafre{"\n"}
-                                           -Pão integral ou tapioca{"\n"}
-                                           -Frutas (banana ou mamão){"\n"}
-                                           -Café preto ou chá sem açúcar</Text>
-          </View>
-          <View style={styles.dietItem}>
-            <Text style={styles.dietName}>Lanche da manhã:</Text>
-            <Text style={styles.dietDesc}>-Iogurte natural ou grego{"\n"}
-                                           -Mix de castanhas (amêndoas, nozes, castanha de caju){"\n"}
-                                           -Frutas pequenas (maçã ou pera)</Text>
-          </View>
-          <View style={styles.dietItem}>
-            <Text style={styles.dietName}>Almoço:</Text>
-            <Text style={styles.dietDesc}>-Arroz integral ou quinoa{"\n"}
-                                           -Feijão ou lentilha{"\n"}
-                                           -Frango grelhado, peixe ou carne magra{"\n"}
-                                           -Salada variada (alface, rúcula, tomate, cenoura){"\n"}
-                                           Legumes cozidos ou assados</Text>
-          </View>
-          <View style={styles.dietItem}>
-            <Text style={styles.dietName}>Lanche da tarde:</Text>
-            <Text style={styles.dietDesc}>-Sanduíche natural de pão integral com peito de peru e queijo branco{"\n"}
-                                           -Suco natural ou água de coco{"\n"}
-                                           -Frutas ou cenouras baby</Text>
-          </View>
-          <View style={styles.dietItem}>
-            <Text style={styles.dietName}>Jantar:</Text>
-            <Text style={styles.dietDesc}>-Peixe grelhado ou frango{"\n"}
-                                           -Batata doce ou mandioca assada{"\n"}
-                                           -Brócolis, abobrinha ou couve-flor cozidos{"\n"}
-                                           -Salada leve (rúcula, tomate, pepino)</Text>
-          </View>
-        </View>
+        {/* Carrossel de dieta */}
+        <Text style={styles.carouselTitle}>Dieta Recomendada</Text>
+        <FlatList
+          data={dietData}
+          keyExtractor={(item, index) => index.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          snapToAlignment="center"
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          renderItem={({ item }) => (
+            <View style={[styles.dietCard, { width: screenWidth * 0.8 }]}>
+              <Text style={styles.dietCardTitle}>{item.title}</Text>
+              {item.items.map((food, i) => (
+                <Text key={i} style={styles.dietCardItem}>• {food}</Text>
+              ))}
+            </View>
+          )}
+        />
       </ScrollView>
 
       <Image
@@ -145,38 +146,16 @@ export default function Nutrition() {
 
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
-  container: { flex: 1, padding: 16 },
   title: { marginTop: 40, fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#fff", alignSelf: "center" },
-  donutRow: {
+
+  donutsCardContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-around",
-    width: "100%",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  donutContainer: {
-    alignItems: "center",
-    margin: 10,
-    width: 120,
-  },
-  donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
-  donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
-
-  // Dieta vidro premium
-  dietSection: {
-    marginTop: 30,
-    width: "100%",
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
     shadowColor: "#000",
@@ -185,12 +164,29 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  dietTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 12, alignSelf: "center" },
-  dietItem: { marginBottom: 10 },
-  dietName: { fontSize: 16, fontWeight: "bold", color: "#36A2EB" },
-  dietDesc: { fontSize: 14, color: "#fff", marginLeft: 6 },
+  donutRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around", width: "100%" },
+  donutContainer: { alignItems: "center", margin: 10, width: 120 },
+  donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
+  donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
 
-  // logo styles
+  carouselTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginTop: 30, marginBottom: 10, alignSelf: "center" },
+
+  dietCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  dietCardTitle: { fontSize: 18, fontWeight: "bold", color: "#36A2EB", marginBottom: 8 },
+  dietCardItem: { fontSize: 14, color: "#fff", marginBottom: 4 },
+
   logo: {
     position: "absolute",
     top: 30,
