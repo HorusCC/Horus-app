@@ -5,7 +5,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 export default function WelcomePage() {
     return (
         <View style={styles.container}>
-            <Image style={styles.image} source={require("../assets/images/logo.png")}></Image>
+            <Image style={styles.image} source={require("../assets/images/horusNew.png")}></Image>
             <Text style={styles.title}>Seja bem-vindo!</Text>
             <Text style={styles.subtitle}>Crie uma conta e acessa os benefícios</Text>
             <Button
@@ -19,7 +19,7 @@ export default function WelcomePage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#000',
         justifyContent: 'center',
         paddingInline: 25
     },
@@ -32,7 +32,8 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "500",
         textAlign: "center",
-        marginBottom: 20
+        marginBottom: 20,
+        color: "#5692B7"
     },
     subtitle: {
         fontSize: 16,
