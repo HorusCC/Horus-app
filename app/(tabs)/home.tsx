@@ -93,9 +93,49 @@ export default function Nutrition() {
             <Donut key={index} item={item} />
           ))}
         </View>
+
+        {/* Seção de Dieta - estilo vidro premium */}
+        <View style={styles.dietSection}>
+          <Text style={styles.dietTitle}>Dieta Recomendada</Text>
+          <View style={styles.dietItem}>
+            <Text style={styles.dietName}>Café da Manhã:</Text>
+            <Text style={styles.dietDesc}>-Ovos mexidos ou omelete com espinafre{"\n"}
+                                           -Pão integral ou tapioca{"\n"}
+                                           -Frutas (banana ou mamão){"\n"}
+                                           -Café preto ou chá sem açúcar</Text>
+          </View>
+          <View style={styles.dietItem}>
+            <Text style={styles.dietName}>Lanche da manhã:</Text>
+            <Text style={styles.dietDesc}>-Iogurte natural ou grego{"\n"}
+                                           -Mix de castanhas (amêndoas, nozes, castanha de caju){"\n"}
+                                           -Frutas pequenas (maçã ou pera)</Text>
+          </View>
+          <View style={styles.dietItem}>
+            <Text style={styles.dietName}>Almoço:</Text>
+            <Text style={styles.dietDesc}>-Arroz integral ou quinoa{"\n"}
+                                           -Feijão ou lentilha{"\n"}
+                                           -Frango grelhado, peixe ou carne magra{"\n"}
+                                           -Salada variada (alface, rúcula, tomate, cenoura){"\n"}
+                                           Legumes cozidos ou assados</Text>
+          </View>
+          <View style={styles.dietItem}>
+            <Text style={styles.dietName}>Lanche da tarde:</Text>
+            <Text style={styles.dietDesc}>-Sanduíche natural de pão integral com peito de peru e queijo branco{"\n"}
+                                           -Suco natural ou água de coco{"\n"}
+                                           -Frutas ou cenouras baby</Text>
+          </View>
+          <View style={styles.dietItem}>
+            <Text style={styles.dietName}>Jantar:</Text>
+            <Text style={styles.dietDesc}>-Peixe grelhado ou frango{"\n"}
+                                           -Batata doce ou mandioca assada{"\n"}
+                                           -Brócolis, abobrinha ou couve-flor cozidos{"\n"}
+                                           -Salada leve (rúcula, tomate, pepino)</Text>
+          </View>
+        </View>
       </ScrollView>
 
-<Image source={require("../../assets/images/horusNew.png")}   
+      <Image
+        source={require("../../assets/images/horusNew.png")}
         style={styles.logo}
         accessibilityLabel="Horus Nutrition logo"
       />
@@ -112,6 +152,15 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-around",
     width: "100%",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   donutContainer: {
     alignItems: "center",
@@ -120,6 +169,26 @@ const styles = StyleSheet.create({
   },
   donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
   donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
+
+  // Dieta vidro premium
+  dietSection: {
+    marginTop: 30,
+    width: "100%",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  dietTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 12, alignSelf: "center" },
+  dietItem: { marginBottom: 10 },
+  dietName: { fontSize: 16, fontWeight: "bold", color: "#36A2EB" },
+  dietDesc: { fontSize: 14, color: "#fff", marginLeft: 6 },
 
   // logo styles
   logo: {
@@ -130,12 +199,10 @@ const styles = StyleSheet.create({
     height: 64,
     resizeMode: "contain",
     opacity: 0.98,
-    // sombra (iOS)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
-    // elevação Android
     elevation: 4,
   },
 });
