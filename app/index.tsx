@@ -18,14 +18,26 @@ export default function WelcomePage() {
       <Text style={[styles.subtitle, { color: colors.tint }]}>
         Crie uma conta e acessa os benefícios
       </Text>
-      <Button
+      {/* <Button
         style={[
           styles.button,
           { backgroundColor: colors.buttonPrimary, color: colors.text },
         ]}
         title="Começar"
         onPress={() => router.push("/login")}
-      />
+      /> */}
+      <Text
+        style={[
+          styles.button,
+          {
+            backgroundColor: colors.buttonPrimary,
+            color: colors.buttonTextInicio,
+          },
+        ]}
+        onPress={() => router.push("/login")}
+      >
+        Começar
+      </Text>
     </View>
   );
 }
@@ -54,6 +66,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    marginTop: 20,
+    marginTop: 10,
+    padding: 15,
+    textAlign: "center",
+    fontWeight: "700",
+    fontSize: 20,
+    borderRadius: 20,
   },
 });
