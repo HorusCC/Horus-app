@@ -31,12 +31,7 @@ export default function TabsLayout() {
             <Ionicons name="book" color={color} size={size} />
           ),
         }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault(); // bloqueia navegação padrão
-            router.push("/searchFood"); // redireciona para searchFood
-          },
-        }}
+        redirect
       />
       <Tabs.Screen
         name="noticias"

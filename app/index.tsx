@@ -1,17 +1,31 @@
 import { Button } from "@/components/Button";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Text, View, StyleSheet } from "react-native";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function WelcomePage() {
+  const { colors, toggleTheme } = useTheme();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Image
         style={styles.image}
         source={require("../assets/images/logo.png")}
-      ></Image>
-      <Text style={styles.title}>Seja bem-vindo!</Text>
-      <Text style={styles.subtitle}>Crie uma conta e acessa os benefícios</Text>
-      <Button title="Começar" onPress={() => router.push("/login")}></Button>
+      />
+      <Text style={[styles.title, { color: colors.text }]}>
+        Seja bem-vindo!
+      </Text>
+      <Text style={[styles.subtitle, { color: colors.tint }]}>
+        Crie uma conta e acessa os benefícios
+      </Text>
+      <Button
+        style={[
+          styles.button,
+          { backgroundColor: colors.buttonPrimary, color: colors.text },
+        ]}
+        title="Começar"
+        onPress={() => router.push("/login")}
+      />
     </View>
   );
 }
@@ -19,7 +33,6 @@ export default function WelcomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     justifyContent: "center",
     paddingInline: 25,
   },
@@ -38,7 +51,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    color: "#0057C9",
     marginBottom: 20,
+  },
+  button: {
+    marginTop: 20,
   },
 });
