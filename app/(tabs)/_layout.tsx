@@ -1,40 +1,59 @@
-import { Tabs } from "expo-router";
-import ThemeToggleButton from "../../components/ThemeToggleButton";
+import { Tabs, router } from "expo-router";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 
-export default function TabLayout() {
+export default function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
+        tabBarStyle: { backgroundColor: colors.background },
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.text,
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="index"
         options={{
           title: "Início",
-          tabBarIcon: ({ color, size }) => <></>,
-          headerRight: () => <ThemeToggleButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="diary"
+        name="diario"
         options={{
           title: "Diário",
-          headerRight: () => <ThemeToggleButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book" color={color} size={size} />
+          ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault(); // bloqueia navegação padrão
+            router.push("/searchFood"); // redireciona para searchFood
+          },
         }}
       />
       <Tabs.Screen
-        name="news"
+        name="noticias"
         options={{
           title: "Notícias",
-          headerRight: () => <ThemeToggleButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="newspaper" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="more"
+        name="mais"
         options={{
           title: "Mais",
-          headerRight: () => <ThemeToggleButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="menu" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>
