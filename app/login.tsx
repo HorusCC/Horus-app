@@ -1,7 +1,14 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useState } from "react";
@@ -99,8 +106,10 @@ export default function LoginPage() {
         </View>
 
         {/* Botão de esqueci a senha */}
-        <TouchableOpacity onPress={() => router.push("/searchFood")}>
-          <Text style={styles.subtitle}>Esqueci a senha</Text>
+        <TouchableOpacity onPress={() => router.push("/forgot")}>
+          <Text style={[styles.subtitle, { color: colors.text }]}>
+            Esqueci a senha
+          </Text>
         </TouchableOpacity>
       </View>
 

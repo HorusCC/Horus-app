@@ -7,7 +7,6 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useState } from "react";
-import { SubMenu } from "@/components/SubMenu";
 
 export default function CafeDaManhaPage() {
   const [search, setSearch] = useState("");
@@ -43,8 +42,6 @@ export default function CafeDaManhaPage() {
           <Text style={styles.buttonText}>Fazer leitura em{"\n"}código QR</Text>
         </TouchableOpacity>
       </View>
-
-      <SubMenu />
     </View>
   );
 }
