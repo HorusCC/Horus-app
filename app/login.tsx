@@ -2,15 +2,17 @@ import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
 import { Image, StyleSheet, Text, View, TextInput } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons"; // ou outro pacote
+import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [isSelected, setSelection] = useState(false);
   const [password, setPassword] = useState("");
+  const { colors, theme } = useTheme();
   const users = [
     { email: "lorenzo@email.com", password: "123456" },
     { email: "admin@email.com", password: "admin123" },
@@ -37,13 +39,19 @@ export default function LoginPage() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Image
         style={styles.image}
-        source={require("../assets/images/horusNew.png")}
+        source={
+          theme === "dark"
+            ? require("../assets/images/horusNew.png")
+            : require("../assets/images/logo.png")
+        }
       />
-      <Text style={styles.title}>Seja Bem-vindo!</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: colors.text }]}>
+        Seja Bem-vindo!
+      </Text>
+      <Text style={[styles.subtitle, { color: colors.text }]}>
         Preencha os campos para acessar o aplicativo
       </Text>
       {/* <Input placeholder="Email" value={email} onChangeText={setEmail} />
@@ -110,7 +118,6 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#00060E",
     justifyContent: "center",
     paddingHorizontal: 25,
   },
@@ -128,13 +135,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     marginBottom: 20,
-    color: "#fff",
   },
   subtitle: {
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    color: "#0057C9",
     marginBottom: 12,
   },
   checkboxContainer: {
