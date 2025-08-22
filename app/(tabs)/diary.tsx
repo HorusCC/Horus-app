@@ -74,20 +74,20 @@ export default function DietDiary() {
         accessibilityLabel="Horus logo"
       />
 
-      <Text style={styles.title}>📖 Diário Alimentar</Text>
+      <Text style={styles.title}>Diário Alimentar</Text>
 
       <View style={styles.inputRow}>
         <TextInput
           style={[styles.input, { flex: 2 }]}
           placeholder="Alimento (ex: arroz)"
-          placeholderTextColor="#888"
+          placeholderTextColor="#5692B7"
           value={foodName}
           onChangeText={setFoodName}
         />
         <TextInput
           style={[styles.input, { flex: 1, marginLeft: 8 }]}
           placeholder="Gramas"
-          placeholderTextColor="#888"
+          placeholderTextColor="#5692B7"
           value={grams}
           onChangeText={setGrams}
           keyboardType="numeric"
@@ -123,41 +123,47 @@ export default function DietDiary() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#000" },
-  logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 20, left: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginTop: 30, marginBottom: 20, textAlign: "center", color: "#fff" },
+  logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 40, left: 20 },
+  title: { fontSize: 24, fontWeight: "bold", marginTop: 40, marginBottom: 20, textAlign: "center", color: "#0057C9" },
   inputRow: { flexDirection: "row", marginBottom: 10 },
   input: {
     borderWidth: 1,
-    borderColor: "#444",
+    borderColor: "#fff",
     padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#222",
+    borderRadius: 20,
+    backgroundColor: "#000",
     color: "#fff",
   },
   addButton: {
-    backgroundColor: "#36A2EB",
+    backgroundColor: "#000",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 15,
+    borderColor: "#0057C9",
+    borderWidth: 1,
   },
-  addButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  addButtonText: { color: "#0057C9", fontWeight: "bold", fontSize: 16 },
   list: { marginBottom: 20 },
   foodItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 10,
-    backgroundColor: "#111",
-    borderRadius: 8,
+    backgroundColor: "#000",
+    borderRadius: 20,
     marginBottom: 8,
+    borderColor: "#fff",
+    borderWidth: 1,
   },
   foodText: { fontSize: 16, color: "#fff" },
   removeText: { color: "#FF4C4C", fontWeight: "bold", fontSize: 16 },
   clearButton: {
-    backgroundColor: "#FF4C4C",
+    backgroundColor: "#000",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
+    borderColor: "#FF4C4C",
+    borderWidth: 1,
   },
-  clearText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  clearText: { color: "#FF4C4C", fontWeight: "bold", fontSize: 16 },
 });

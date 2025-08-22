@@ -146,7 +146,7 @@ export default function Nutrition() {
 
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
-  title: { marginTop: 40, fontSize: 24, fontWeight: "bold", marginBottom: 20, color: "#fff", alignSelf: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginTop: 60, marginBottom: 20, textAlign: "center", color: "#0057C9" },
 
   donutsCardContainer: {
     flexDirection: "row",
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
   donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
 
-  carouselTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginTop: 30, marginBottom: 10, alignSelf: "center" },
+  carouselTitle: { fontSize: 20, fontWeight: "bold", color: "#0057C9", marginTop: 30, marginBottom: 10, alignSelf: "center" },
 
   dietCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
@@ -187,18 +187,5 @@ const styles = StyleSheet.create({
   dietCardTitle: { fontSize: 18, fontWeight: "bold", color: "#36A2EB", marginBottom: 8 },
   dietCardItem: { fontSize: 14, color: "#fff", marginBottom: 4 },
 
-  logo: {
-    position: "absolute",
-    top: 30,
-    right: 320,
-    width: 64,
-    height: 64,
-    resizeMode: "contain",
-    opacity: 0.98,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
+  logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 40, left: 20 },
 });

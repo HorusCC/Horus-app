@@ -30,11 +30,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="news"
+        name="search"
         options={{
-          title: "Notícias",
+          title: "Pesquisa",
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="article" size={size} color={color} />
+            <MaterialIcons name="search" size={size} color={color} />
           ),
         }}
       />
