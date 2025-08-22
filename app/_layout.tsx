@@ -2,7 +2,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
-import { MacroProvider } from "../contexts/MacroContext"; // ajuste o caminho se necessário
+import { MacroProvider } from "../app/contexts/MacroContext";
 
 export default function Layout() {
   return (
