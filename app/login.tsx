@@ -1,7 +1,7 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, View, TextInput } from "react-native";
+import { Image, StyleSheet, Text, View, TextInput, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useState } from "react";
@@ -54,13 +54,7 @@ export default function LoginPage() {
       <Text style={[styles.subtitle, { color: colors.text }]}>
         Preencha os campos para acessar o aplicativo
       </Text>
-      {/* <Input placeholder="Email" value={email} onChangeText={setEmail} />
-      <Input
-        placeholder="Senha"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      /> */}
+
       <View style={styles.inputContainer}>
         <MaterialIcons
           name="email"
@@ -76,6 +70,7 @@ export default function LoginPage() {
           placeholderTextColor="#5692B7"
         />
       </View>
+
       <View style={styles.inputContainer}>
         <MaterialIcons
           name="security"
@@ -92,6 +87,7 @@ export default function LoginPage() {
           onChangeText={setPassword}
         />
       </View>
+
       <View style={styles.containerSenha}>
         <View style={styles.checkboxContainer}>
           <Checkbox
@@ -101,10 +97,15 @@ export default function LoginPage() {
           />
           <Text style={styles.labelSecundary}>Lembrar-me?</Text>
         </View>
-        <Text style={styles.subtitle}> Esqueci a senha</Text>
+
+        {/* Botão de esqueci a senha */}
+        <TouchableOpacity onPress={() => router.push("/searchFood")}>
+          <Text style={styles.subtitle}>Esqueci a senha</Text>
+        </TouchableOpacity>
       </View>
-      ;{/* <Text style={styles.resetPassword}>Lembrar-me</Text> */}
+
       <Button title="Entrar" style={styles.button} onPress={handleLogin} />
+
       <Text style={styles.labelSecundary}>
         Novo por aqui?{" "}
         <Text style={styles.register} onPress={() => router.push("/register")}>
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
   resetPassword: {
     textAlign: "right",
     fontWeight: "500",
-    color: "#0057C9",
+    color: "#5692B7",
     marginBottom: 20,
   },
   button: {
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
   },
   register: {
     fontWeight: "500",
-    color: "#0057C9",
+    color: "#5692B7",
   },
   label: {
     marginHorizontal: 8,
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#0057C9",
+    borderColor: "#5692B7",
     paddingHorizontal: 10,
     borderRadius: 5,
     marginBottom: 10,
