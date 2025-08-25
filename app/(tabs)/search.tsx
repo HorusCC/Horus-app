@@ -14,7 +14,7 @@ export default function CafeDaManhaPage() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Text style={styles.header}>Café da manhã</Text>
+      <Text style={styles.header}>Pesquise seu alimento</Text>
 
       {/* Campo de busca */}
       <View style={styles.searchContainer}>

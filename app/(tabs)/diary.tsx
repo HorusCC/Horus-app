@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
 import { useMacros } from "../contexts/MacroContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 type FoodEntry = {
   id: string;
@@ -12,7 +13,6 @@ type FoodEntry = {
   fat: number;
 };
 
-// Mini banco de alimentos
 const foodDatabase: Record<string, { carb: number; protein: number; fat: number }> = {
   arroz: { carb: 28, protein: 2.5, fat: 0.3 },
   frango: { carb: 0, protein: 27, fat: 3.6 },
@@ -29,6 +29,14 @@ export default function DietDiary() {
   const [grams, setGrams] = useState("");
   const [foods, setFoods] = useState<FoodEntry[]>([]);
   const { addMacros, resetMacros } = useMacros();
+  const { isDark } = useTheme();
+
+  // cores de acordo com o tema
+  const backgroundColor = isDark ? "#000" : "#fff";
+  const cardColor = isDark ? "#111" : "#f0f0f0";
+  const inputColor = isDark ? "#222" : "#fff";
+  const textColor = isDark ? "#fff" : "#000";
+  const borderColor = "#0057C9";
 
   const addFood = () => {
     const cleanName = foodName.toLowerCase().replace(/\s/g, "");
@@ -66,45 +74,50 @@ export default function DietDiary() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Logo */}
+    <View style={[styles.container, { backgroundColor }]}>
       <Image
         source={require("../../assets/images/horusNew.png")}
         style={styles.logo}
         accessibilityLabel="Horus logo"
       />
 
-      <Text style={styles.title}>Diário Alimentar</Text>
+      <Text style={[styles.title, { color: "#0057C9" }]}>Diário Alimentar</Text>
 
+      {/* Inputs */}
       <View style={styles.inputRow}>
         <TextInput
-          style={[styles.input, { flex: 2 }]}
+          style={[styles.input, { flex: 2, color: textColor, borderColor, backgroundColor: "#000" }]}
           placeholder="Alimento (ex: arroz)"
-          placeholderTextColor="#5692B7"
+          placeholderTextColor={isDark ? "#5692B7" : "#5692B7"}
           value={foodName}
           onChangeText={setFoodName}
         />
         <TextInput
-          style={[styles.input, { flex: 1, marginLeft: 8 }]}
+          style={[styles.input, { flex: 1, marginLeft: 8, color: textColor, borderColor, backgroundColor: "#000" }]}
           placeholder="Gramas"
-          placeholderTextColor="#5692B7"
+          placeholderTextColor={isDark ? "#5692B7" : "#5692B7"}
           value={grams}
           onChangeText={setGrams}
           keyboardType="numeric"
         />
       </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={addFood}>
-        <Text style={styles.addButtonText}>Adicionar</Text>
+      {/* Botão Adicionar */}
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#000", borderColor }]}
+        onPress={addFood}
+      >
+        <Text style={[styles.buttonText, { color: borderColor }]}>Adicionar</Text>
       </TouchableOpacity>
 
+      {/* Lista de alimentos */}
       <FlatList
         style={styles.list}
         data={foods}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.foodItem}>
-            <Text style={styles.foodText}>
+          <View style={[styles.foodItem, { backgroundColor: cardColor, borderColor }]}>
+            <Text style={[styles.foodText, { color: textColor }]}>
               {item.grams}g de {item.name} → {item.carb.toFixed(1)}g C | {item.protein.toFixed(1)}g P | {item.fat.toFixed(1)}g G
             </Text>
             <TouchableOpacity onPress={() => removeFood(item.id)}>
@@ -114,56 +127,27 @@ export default function DietDiary() {
         )}
       />
 
-      <TouchableOpacity style={styles.clearButton} onPress={clearAll}>
-        <Text style={styles.clearText}>Limpar Tudo</Text>
+      {/* Botão Limpar Tudo */}
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#000", borderColor: "#FF4C4C"}]}
+        onPress={clearAll}
+      >
+        <Text style={[styles.buttonText, { color: "#FF4C4C" }]}>Limpar Tudo</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#000" },
+  container: { flex: 1, padding: 20 },
   logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 40, left: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginTop: 40, marginBottom: 20, textAlign: "center", color: "#0057C9" },
+  title: { fontSize: 24, fontWeight: "bold", marginTop: 40, marginBottom: 20, textAlign: "center" },
   inputRow: { flexDirection: "row", marginBottom: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#fff",
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: "#000",
-    color: "#fff",
-  },
-  addButton: {
-    backgroundColor: "#000",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 15,
-    borderColor: "#0057C9",
-    borderWidth: 1,
-  },
-  addButtonText: { color: "#0057C9", fontWeight: "bold", fontSize: 16 },
+  input: { borderWidth: 1, padding: 10, borderRadius: 20 },
+  button: { padding: 12, borderRadius: 8, borderWidth: 1, alignItems: "center", marginBottom: 15 },
+  buttonText: { fontWeight: "bold", fontSize: 16 },
   list: { marginBottom: 20 },
-  foodItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 10,
-    backgroundColor: "#000",
-    borderRadius: 20,
-    marginBottom: 8,
-    borderColor: "#fff",
-    borderWidth: 1,
-  },
-  foodText: { fontSize: 16, color: "#fff" },
+  foodItem: { flexDirection: "row", justifyContent: "space-between", padding: 10, borderRadius: 20, borderWidth: 1, marginBottom: 8 },
+  foodText: { fontSize: 16 },
   removeText: { color: "#FF4C4C", fontWeight: "bold", fontSize: 16 },
-  clearButton: {
-    backgroundColor: "#000",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    borderColor: "#FF4C4C",
-    borderWidth: 1,
-  },
-  clearText: { color: "#FF4C4C", fontWeight: "bold", fontSize: 16 },
 });

@@ -1,52 +1,49 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 
-export default function TabLayout() {
+export default function TabsLayout() {
+  const { isDark } = useTheme();
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#5692B7",
-        tabBarInactiveTintColor: "#999",
-        tabBarStyle: { backgroundColor: "#000", borderTopWidth: 0 },
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Início",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="home" size={size} color={color} />
-          ),
+    <ThemeProvider>
+      <Tabs
+        screenOptions={{
+          headerShown: false, // remove header branco de todas as telas
+          tabBarActiveTintColor: "#5692B7",
+          tabBarInactiveTintColor: isDark ? "#999" : "#555",
+          tabBarStyle: {
+            backgroundColor: isDark ? "#000" : "#fff",
+            borderTopWidth: 0,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="diary"
-        options={{
-          title: "Diário",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="book" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: "Pesquisa",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: "Mais",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="menu" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="home"
+          options={{
+            tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="diary"
+          options={{
+            tabBarIcon: ({ color, size }) => <MaterialIcons name="book" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="search"
+          options={{
+            tabBarIcon: ({ color, size }) => <MaterialIcons name="search" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="more"
+          options={{
+            tabBarIcon: ({ color, size }) => <MaterialIcons name="menu" size={size} color={color} />,
+          }}
+        />
+      </Tabs>
+    </ThemeProvider>
   );
 }

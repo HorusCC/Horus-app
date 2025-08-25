@@ -8,11 +8,26 @@ export default function MoreScreen() {
   const router = useRouter();
 
   const options = [
-    { icon: "person-circle-outline", label: "Meu Perfil" },
-    { icon: "settings-outline", label: "Configurações", action: () => router.push("/settings") },
-    { icon: "information-circle-outline", label: "Sobre o App" },
-    // botão sair sempre por último
-    { icon: "log-out-outline", label: "Sair", action: () => router.replace("/login") },
+    { 
+      icon: "person-circle-outline", 
+      label: "Meu Perfil", 
+      action: () => router.push("/profile")
+    },
+    { 
+      icon: "settings-outline", 
+      label: "Configurações", 
+      action: () => router.push("/settings") 
+    },
+    { 
+      icon: "information-circle-outline", 
+      label: "Sobre o App", 
+      action: () => router.push("/about")
+    },
+    { 
+      icon: "log-out-outline", 
+      label: "Sair", 
+      action: () => router.replace("/login") 
+    },
   ];
 
   return (
@@ -91,7 +106,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#5692B7",
   },
-  // estilo especial para o botão de sair
   logoutOption: {
     borderWidth: 1,
     borderColor: "#D9534F",
