@@ -26,9 +26,9 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="diary"
+          name="diet"
           options={{
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="book" size={size} color={color} />,
+            tabBarIcon: ({ color, size }) => <MaterialIcons name="restaurant" size={size} color={color} />,
           }}
         />
         <Tabs.Screen
