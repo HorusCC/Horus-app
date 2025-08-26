@@ -21,6 +21,7 @@ function MainLayout() {
       <Stack
         screenOptions={{
           headerRight: () => <ThemeToggleButton />,
+          headerTitle: "",
         }}
       />
     </>
