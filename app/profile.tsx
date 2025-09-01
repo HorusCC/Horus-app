@@ -1,89 +1,132 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Tabs, router } from "expo-router";
-import { FontAwesome } from "@expo/vector-icons";
+// app/(tabs)/profile.tsx
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 
-export default function ProfilePage() {
-  // 🔹 Dados mockados do usuário
-  const user = {
-    nome: "João Silva",
-    email: "joao.silva@example.com",
-    idade: 25,
-    altura: 176, // cm
-    peso: 68, // kg
+export default function ProfileScreen() {
+  const userData = {
+    peso: "72 kg",
+    altura: "1,78 m",
+    imc: "22.7",
+    tmb: "1.750 kcal",
+    idade: "23 anos",
     sexo: "Masculino",
-    atividadeFisica: "Treino 4x/semana",
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        <Tabs.Screen
-          options={{
-            title: "Início",
-            tabBarIcon: ({ color }) => (
-              <FontAwesome size={22} name="filter" color={color} />
-            ),
-          }}
-        />
-        Perfil do Usuário
-      </Text>
+    <View style={styles.wrapper}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Header com logo + título */}
+        <View style={styles.header}>
+          <Image
+            source={require("../assets/images/horusNew.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Meu Perfil</Text>
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Nome:</Text>
-        <Text style={styles.value}>{user.nome}</Text>
+        <View style={styles.profileBox}>
+          <Text style={styles.subtitle}>Informações Pessoais</Text>
 
-        <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{user.email}</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Idade</Text>
+            <Text style={styles.value}>{userData.idade}</Text>
+          </View>
 
-        <Text style={styles.label}>Idade:</Text>
-        <Text style={styles.value}>{user.idade} anos</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Sexo</Text>
+            <Text style={styles.value}>{userData.sexo}</Text>
+          </View>
+        </View>
 
-        <Text style={styles.label}>Altura:</Text>
-        <Text style={styles.value}>{user.altura} cm</Text>
+        <View style={styles.profileBox}>
+          <Text style={styles.subtitle}>Dados Corporais</Text>
 
-        <Text style={styles.label}>Peso:</Text>
-        <Text style={styles.value}>{user.peso} kg</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Peso</Text>
+            <Text style={styles.value}>{userData.peso}</Text>
+          </View>
 
-        <Text style={styles.label}>Sexo:</Text>
-        <Text style={styles.value}>{user.sexo}</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Altura</Text>
+            <Text style={styles.value}>{userData.altura}</Text>
+          </View>
 
-        <Text style={styles.label}>Atividade Física:</Text>
-        <Text style={styles.value}>{user.atividadeFisica}</Text>
-      </View>
+          <View style={styles.card}>
+            <Text style={styles.label}>IMC</Text>
+            <Text style={styles.value}>{userData.imc}</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.label}>TMB</Text>
+            <Text style={styles.value}>{userData.tmb}</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
-    backgroundColor: "#000", // fundo dark
+    backgroundColor: "#000", // fundo 100% preto
+  },
+  container: {
     padding: 20,
+    flexGrow: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 25,
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
+    position: "absolute",
+    top: 25,
+    left: 5,
   },
   title: {
-    fontSize: 22,
+    flex: 1,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 20,
+    color: "#0057C9",
+    marginTop: 40,
     textAlign: "center",
   },
+  profileBox: {
+    marginBottom: 30,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#5692B7",
+    marginBottom: 12,
+    marginLeft: 4,
+  },
   card: {
-    backgroundColor: "#111",
-    padding: 20,
+    backgroundColor: "#000",
     borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#0057C9",
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   label: {
-    color: "#aaa",
     fontSize: 14,
-    marginTop: 10,
+    color: "#5692B7",
+    marginBottom: 4,
   },
   value: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
+    color: "#fff",
   },
 });
