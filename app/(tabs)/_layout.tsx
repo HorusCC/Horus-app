@@ -21,6 +21,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="home"
           options={{
+            title: "Início",
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="home" size={size} color={color} />
             ),
@@ -29,6 +30,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="diet"
           options={{
+            title: "Dieta",
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="restaurant" size={size} color={color} />
             ),
@@ -37,6 +39,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="search"
           options={{
+            title: "Pesquisa",
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="search" size={size} color={color} />
             ),
@@ -45,6 +48,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
+            title: "Perfil",
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="person" size={size} color={color} />
             ),
