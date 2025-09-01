@@ -3,11 +3,14 @@ import { Stack } from "expo-router";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import { StatusBar } from "expo-status-bar";
+import { MacroProvider } from "./contexts/MacroContext";
 
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <MainLayout />
+      <MacroProvider>
+        <MainLayout />
+      </MacroProvider>
     </ThemeProvider>
   );
 }
