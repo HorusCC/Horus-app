@@ -60,3 +60,6 @@ android/*.jks
 # Apenas manter o wrapper (importante)
 !android/gradle/wrapper/
 !android/gradle/wrapper/**
+
+.idea/
+*.iml
