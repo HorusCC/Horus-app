@@ -1,19 +1,32 @@
 // app/_layout.tsx
 import { Stack } from "expo-router";
-import { StatusBar } from "react-native";
-import Toast from "react-native-toast-message";
-import { MacroProvider } from "../app/contexts/MacroContext";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
+import { StatusBar } from "expo-status-bar";
+import { MacroProvider } from "./contexts/MacroContext";
 
-export default function Layout() {
+export default function RootLayout() {
   return (
-    <MacroProvider>
-      <StatusBar backgroundColor="black" barStyle="light-content" />
-      <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-      </Stack>
-      <Toast />
-    </MacroProvider>
+    <ThemeProvider>
+      <MacroProvider>
+        <MainLayout />
+      </MacroProvider>
+    </ThemeProvider>
+  );
+}
+
+function MainLayout() {
+  const { isDark } = useTheme();
+
+  return (
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerRight: () => <ThemeToggleButton />,
+          headerTitle: "",
+        }}
+      />
+    </>
   );
 }

@@ -1,46 +1,57 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
+import { useTheme } from "@/contexts/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 export default function TabsLayout() {
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <ThemeProvider>
       <Tabs
         screenOptions={{
-          headerShown: false, // remove header branco de todas as telas
-          tabBarActiveTintColor: "#5692B7",
-          tabBarInactiveTintColor: isDark ? "#999" : "#555",
-          tabBarStyle: {
-            backgroundColor: isDark ? "#000" : "#fff",
-            borderTopWidth: 0,
-          },
+          headerTitle: "",
+          headerShown: false,
+          tabBarStyle: { backgroundColor: colors.background },
+          tabBarActiveTintColor: colors.text,
+          tabBarInactiveTintColor: colors.text,
         }}
       >
         <Tabs.Screen
           name="home"
           options={{
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />,
+            title: "Início",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="home" size={size} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="diet"
           options={{
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="restaurant" size={size} color={color} />,
+            title: "Dieta",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="restaurant" size={size} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="search"
           options={{
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="search" size={size} color={color} />,
+            title: "Pesquisa",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="search" size={size} color={color} />
+            ),
           }}
         />
         <Tabs.Screen
-          name="more"
+          name="profile"
           options={{
-            tabBarIcon: ({ color, size }) => <MaterialIcons name="menu" size={size} color={color} />,
+            title: "Perfil",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="person" size={size} color={color} />
+            ),
           }}
         />
       </Tabs>

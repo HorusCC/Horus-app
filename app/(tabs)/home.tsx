@@ -1,155 +1,247 @@
-// app/(tabs)/home.tsx  (ou Nutrition.tsx)
-import React, { useEffect, useState, useRef } from "react";
+// app/(tabs)/Nutrition.tsx
+import React, { useState } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
-  Modal, TextInput, Button, FlatList, ActivityIndicator
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  FlatList,
+  Dimensions,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Button,
+  Alert,
 } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useMacros } from "../contexts/MacroContext";
-import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
-import { macrosForServing, Macros } from "../../src/utils/nutrition";
 
-type MealItem = { id: string; label: string; grams: number; macros: Macros };
-type Meal = { id: string; name: string; items: MealItem[] };
+interface DonutData {
+  name: string;
+  value: number;
+  color: string;
+  isCalorie?: boolean;
+  totalMacros?: number;
+}
 
-const initialMeals: Meal[] = [
-  { id: "1", name: "Café da Manhã", items: [] },
-  { id: "2", name: "Lanche da Manhã", items: [] },
-  { id: "3", name: "Almoço", items: [] },
-  { id: "4", name: "Café da Tarde", items: [] },
-  { id: "5", name: "Jantar", items: [] },
+const screenWidth = Dimensions.get("window").width;
+
+const initialMeals = [
+  { id: "1", name: "Café da Manhã", items: "" },
+  { id: "2", name: "Lanche da Manhã", items: "" },
+  { id: "3", name: "Almoço", items: "" },
+  { id: "4", name: "Café da Tarde", items: "" },
+  { id: "5", name: "Jantar", items: "" },
 ];
 
-const Donut = ({ value, color, label, totalMacros, isCalorie = false }: {
-  value: number; color: string; label: string; totalMacros?: number; isCalorie?: boolean;
-}) => {
+const foodDatabase: Record<
+  string,
+  { carb: number; protein: number; fat: number }
+> = {
+  // Café da manhã
+  Pão: { carb: 49, protein: 9, fat: 3.2 },
+  Ovo: { carb: 1, protein: 13, fat: 11 },
+  Leite: { carb: 5, protein: 3.4, fat: 3.3 },
+  Aveia: { carb: 66, protein: 17, fat: 7 },
+  Banana: { carb: 23, protein: 1.1, fat: 0.3 },
+  Maçã: { carb: 14, protein: 0.3, fat: 0.2 },
+  Iogurte: { carb: 6, protein: 3.5, fat: 3 },
+  // Lanche da manhã
+  Castanha: { carb: 14, protein: 20, fat: 50 },
+  "Barra de Cereal": { carb: 65, protein: 7, fat: 10 },
+  "Suco de Laranja": { carb: 10, protein: 0.7, fat: 0.2 },
+  // Almoço
+  Arroz: { carb: 28, protein: 2.5, fat: 0.3 },
+  Feijão: { carb: 14, protein: 9, fat: 0.5 },
+  Frango: { carb: 0, protein: 27, fat: 3.6 },
+  Peixe: { carb: 0, protein: 20, fat: 5 },
+  Salada: { carb: 3, protein: 1, fat: 0 },
+  Legumes: { carb: 7, protein: 2, fat: 0.1 },
+  // Café da tarde
+  "Pão Integral": { carb: 48, protein: 9, fat: 3 },
+  Queijo: { carb: 1.3, protein: 25, fat: 33 },
+  // Jantar
+  "Arroz Integral": { carb: 23, protein: 2.6, fat: 1.5 },
+  "Frango Grelhado": { carb: 0, protein: 27, fat: 3 },
+  "Salada Jantar": { carb: 2, protein: 1, fat: 0 },
+  // Extras experimentais
+  Quinoa: { carb: 21, protein: 4.1, fat: 1.9 },
+  "Batata Doce": { carb: 20, protein: 1.6, fat: 0.1 },
+  Cenoura: { carb: 10, protein: 0.9, fat: 0.2 },
+  Tomate: { carb: 4, protein: 0.9, fat: 0.2 },
+  Abacate: { carb: 9, protein: 2, fat: 15 },
+  "Peito de Peru": { carb: 0, protein: 29, fat: 1 },
+};
+
+const normalizeName = (name: string) =>
+  name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "");
+
+const Donut = ({ item }: { item: DonutData }) => {
   const radius = 50;
   const strokeWidth = 14;
-  const total = isCalorie ? 1 : totalMacros || 1;
-  const pct = isCalorie ? 100 : (value / total) * 100;
+  const totalMacros = item.isCalorie ? 1 : item.totalMacros || 1;
+  const percentage = item.isCalorie ? 100 : (item.value / totalMacros) * 100;
   const circumference = 2 * Math.PI * radius;
+
   return (
     <View style={styles.donutContainer}>
-      <Svg width={radius * 2 + strokeWidth * 2} height={radius * 2 + strokeWidth * 2}>
-        <G rotation="-90" origin={`${radius + strokeWidth}, ${radius + strokeWidth}`}>
-          <Circle cx={radius + strokeWidth} cy={radius + strokeWidth} r={radius} stroke="#2d2d2d" strokeWidth={strokeWidth} fill="transparent" />
+      <Svg
+        width={radius * 2 + strokeWidth * 2}
+        height={radius * 2 + strokeWidth * 2}
+      >
+        <G
+          rotation="-90"
+          origin={`${radius + strokeWidth}, ${radius + strokeWidth}`}
+        >
           <Circle
-            cx={radius + strokeWidth} cy={radius + strokeWidth} r={radius}
-            stroke={color} strokeWidth={strokeWidth} fill="transparent"
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
+            r={radius}
+            stroke="#2d2d2d"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          <Circle
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
+            r={radius}
+            stroke={item.color}
+            strokeWidth={strokeWidth}
+            fill="transparent"
             strokeDasharray={`${circumference}`}
-            strokeDashoffset={circumference - (circumference * pct) / 100}
+            strokeDashoffset={
+              circumference - (circumference * percentage) / 100
+            }
             strokeLinecap="round"
           />
         </G>
-        <SvgText x={radius + strokeWidth} y={radius + strokeWidth + 5} fontSize="16" fontWeight="bold" fill={color} textAnchor="middle">
-          {Math.round(pct)}%
+        <SvgText
+          x={radius + strokeWidth}
+          y={radius + strokeWidth + 5}
+          fontSize="16"
+          fontWeight="bold"
+          fill={item.color}
+          textAnchor="middle"
+        >
+          {Math.round(percentage)}%
         </SvgText>
       </Svg>
-      <Text style={[styles.donutLabel, { color }]}>{Math.round(value)}{isCalorie ? " Kcal" : " g"}</Text>
-      <Text style={styles.donutName}>{label}</Text>
+
+      <Text style={[styles.donutLabel, { color: item.color }]}>
+        {Math.round(item.value)}
+        {item.isCalorie ? " Kcal" : " g"}
+      </Text>
+      <Text style={styles.donutName}>{item.name}</Text>
     </View>
   );
 };
 
-export default function Home() {
+export default function Nutrition() {
   const { carb, protein, fat, addMacros } = useMacros();
+
   const totalMacros = carb + protein + fat;
 
-  const [mealsState, setMealsState] = useState<Meal[]>(initialMeals);
-
-  // modal de adicionar
+  const [mealsState, setMealsState] = useState(initialMeals);
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentMeal, setCurrentMeal] = useState<Meal | null>(null);
+  const [currentMeal, setCurrentMeal] = useState<any>(null);
+  const [foodName, setFoodName] = useState("");
+  const [foodGrams, setFoodGrams] = useState("");
 
-  // busca dentro do modal
-  const [q, setQ] = useState("");
-  const [debounced, setDebounced] = useState(q);
-  const [results, setResults] = useState<FoodItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const [customModalVisible, setCustomModalVisible] = useState(false);
+  const [selectedMealForCustom, setSelectedMealForCustom] = useState<any>(null);
 
-  // seleção e porção
-  const [selected, setSelected] = useState<FoodItem | null>(null);
-  const [grams, setGrams] = useState("100");
+  const data: DonutData[] = [
+    { name: "Carboidrato", value: carb, color: "#36A2EB", totalMacros },
+    { name: "Proteína", value: protein, color: "#FF6384", totalMacros },
+    { name: "Gordura", value: fat, color: "#FFCE56", totalMacros },
+    {
+      name: "Calorias",
+      value: carb * 4 + protein * 4 + fat * 9,
+      color: "#4BC0C0",
+      isCalorie: true,
+    },
+  ];
 
-  useEffect(() => { const id = setTimeout(() => setDebounced(q.trim()), 400); return () => clearTimeout(id); }, [q]);
-  useEffect(() => { setPage(1); setResults([]); setError(null); }, [debounced]);
-
-  useEffect(() => {
-    if (!modalVisible || !debounced) { setResults([]); setHasMore(false); return; }
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    (async () => {
-      try {
-        setLoading(true);
-        const { items, pageCount } = await searchFoodsByName(debounced, page, 24, controller.signal);
-        setResults(prev => page === 1 ? items : [...prev, ...items]);
-        setHasMore(page < pageCount);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setError(e?.message ?? "Erro ao buscar");
-      } finally { setLoading(false); }
-    })();
-    return () => controller.abort();
-  }, [debounced, page, modalVisible]);
-
-  const openAddModal = (meal: Meal) => {
+  const handleAddFood = (meal: any) => {
     setCurrentMeal(meal);
-    setQ("");
-    setSelected(null);
-    setGrams("100");
+    setFoodName("");
+    setFoodGrams("");
     setModalVisible(true);
   };
 
-  const addSelectedToMeal = () => {
-    if (!currentMeal || !selected) return;
-    const g = Number(grams);
-    if (!Number.isFinite(g) || g <= 0) return alert("Informe gramas válidos");
-    const portion = macrosForServing(selected.nutrientsPer100g, g);
+  const saveFood = () => {
+    const cleanName = normalizeName(foodName);
+    const matchedFood = Object.keys(foodDatabase).find(
+      (key) => normalizeName(key) === cleanName
+    );
+    if (!matchedFood)
+      return Alert.alert("⚠️ Alimento não encontrado na base de dados!");
+    const foodData = foodDatabase[matchedFood];
 
-    // soma nos totais globais (seu MacroContext)
-    addMacros(portion.carbs_g, portion.protein_g, portion.fat_g);
+    const gramsValue = parseFloat(foodGrams);
+    if (isNaN(gramsValue) || gramsValue <= 0)
+      return Alert.alert("⚠️ Digite uma quantidade válida!");
 
-    // guarda no estado da refeição para exibir e permitir remover corretamente
-    const entry: MealItem = {
-      id: Math.random().toString(36).slice(2),
-      label: selected.name,
-      grams: g,
-      macros: portion,
-    };
-    setMealsState(ms => ms.map(m => m.id === currentMeal.id ? { ...m, items: [entry, ...m.items] } : m));
+    const factor = gramsValue / 100;
+    const carbValue = foodData.carb * factor;
+    const proteinValue = foodData.protein * factor;
+    const fatValue = foodData.fat * factor;
+
+    addMacros(carbValue, proteinValue, fatValue);
+
+    if (currentMeal) {
+      const updatedMeals = mealsState.map((meal) =>
+        meal.id === currentMeal.id
+          ? {
+              ...meal,
+              items: meal.items ? meal.items + ", " + matchedFood : matchedFood,
+            }
+          : meal
+      );
+      setMealsState(updatedMeals);
+    }
+
     setModalVisible(false);
   };
 
-  const openRemoveModal = (meal: Meal) => {
-    setCurrentMeal(meal);
+  const openCustomModal = (meal: any) => {
+    setSelectedMealForCustom(meal);
     setCustomModalVisible(true);
   };
 
-  // remover
-  const [customModalVisible, setCustomModalVisible] = useState(false);
-  const removeItem = (mealId: string, itemId: string) => {
-    setMealsState(ms => ms.map(m => {
-      if (m.id !== mealId) return m;
-      const toRemove = m.items.find(i => i.id === itemId);
-      if (toRemove) {
-        // desconta dos totais
-        addMacros(-toRemove.macros.carbs_g, -toRemove.macros.protein_g, -toRemove.macros.fat_g);
-      }
-      return { ...m, items: m.items.filter(i => i.id !== itemId) };
-    }));
-  };
+  const removeFoodFromMeal = (food: string) => {
+    if (!selectedMealForCustom) return;
 
-  const data = [
-    { label: "Carboidrato", value: carb, color: "#36A2EB" },
-    { label: "Proteína", value: protein, color: "#FF6384" },
-    { label: "Gordura", value: fat, color: "#FFCE56" },
-    { label: "Calorias", value: carb * 4 + protein * 4 + fat * 9, color: "#4BC0C0", isCalorie: true },
-  ];
+    const updatedMeals = mealsState.map((meal) => {
+      if (meal.id === selectedMealForCustom.id) {
+        const itemsArray = meal.items
+          .split(", ")
+          .filter((item: string) => item !== food);
+
+        const foodData = foodDatabase[food];
+        if (foodData) {
+          addMacros(-foodData.carb, -foodData.protein, -foodData.fat);
+        }
+
+        return { ...meal, items: itemsArray.join(", ") };
+      }
+      return meal;
+    });
+
+    setMealsState(updatedMeals);
+
+    // Se nenhuma refeição tiver alimentos, zera todos os macros
+    const hasAnyFood = updatedMeals.some((meal) => meal.items.trim() !== "");
+    if (!hasAnyFood) {
+      addMacros(-carb, -protein, -fat);
+    }
+  };
 
   return (
     <View style={styles.containerOuter}>
@@ -158,8 +250,8 @@ export default function Home() {
 
         <View style={styles.donutsCardContainer}>
           <View style={styles.donutRow}>
-            {data.map((d, i) => (
-              <Donut key={i} value={d.value} color={d.color} label={d.label} totalMacros={totalMacros} isCalorie={d.isCalorie as any} />
+            {data.map((item, index) => (
+              <Donut key={index} item={item} />
             ))}
           </View>
         </View>
@@ -169,24 +261,35 @@ export default function Home() {
           <View key={meal.id} style={styles.mealCard}>
             <View style={{ flex: 1 }}>
               <Text style={styles.mealTitle}>{meal.name}</Text>
-              {meal.items.length ? (
-                <Text style={styles.mealItems}>
-                  {meal.items.map(i => `${i.label} (${i.grams}g)`).join(", ")}
-                </Text>
+              {meal.items ? (
+                <Text style={styles.mealItems}>{meal.items}</Text>
               ) : (
-                <Text style={[styles.mealItems, { fontStyle: "italic", color: "#888" }]}>Nenhum alimento adicionado</Text>
+                <Text
+                  style={[
+                    styles.mealItems,
+                    { fontStyle: "italic", color: "#888" },
+                  ]}
+                >
+                  Nenhum alimento adicionado
+                </Text>
               )}
             </View>
 
             <View style={{ flexDirection: "row" }}>
-              <TouchableOpacity style={styles.addButton} onPress={() => openAddModal(meal)}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => handleAddFood(meal)}
+              >
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.addButton, { marginLeft: 8, backgroundColor: "#FF4C4C" }]}
-                onPress={() => openRemoveModal(meal)}
-                disabled={!meal.items.length}
+                style={[
+                  styles.addButton,
+                  { marginLeft: 8, backgroundColor: "#FF4C4C" },
+                ]}
+                onPress={() => openCustomModal(meal)}
+                disabled={!meal.items}
               >
                 <Ionicons name="trash-outline" size={24} color="white" />
               </TouchableOpacity>
@@ -195,153 +298,180 @@ export default function Home() {
         ))}
       </ScrollView>
 
-      {/* Modal Adicionar (com busca) */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      {/* Modal Adicionar */}
+      <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff", marginBottom: 8 }}>
-              Adicionar alimento {currentMeal ? `— ${currentMeal.name}` : ""}
+            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>
+              Adicionar alimento
             </Text>
-
-            {/* Busca */}
-            <View style={[styles.searchContainer, { marginBottom: 8 }]}>
-              <MaterialIcons name="search" size={20} color="#0057C9" />
-              <TextInput
-                style={[styles.modalInput, { borderWidth: 0, marginVertical: 0, paddingVertical: 8 }]}
-                placeholder="Buscar alimento"
-                placeholderTextColor="#8ba7c4"
-                value={q}
-                onChangeText={setQ}
-              />
-            </View>
-
-            {/* Resultados */}
-            {error ? <Text style={{ color: "#ff6b6b" }}>{error}</Text> : null}
-            <View style={{ maxHeight: 220 }}>
-              {loading && results.length === 0 ? (
-                <ActivityIndicator />
-              ) : (
-                <FlatList
-                  data={results}
-                  keyExtractor={(i) => i.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => setSelected(item)}
-                      style={{ flexDirection: "row", paddingVertical: 8, borderBottomColor: "#1f2a37", borderBottomWidth: 1 }}
-                    >
-                      {item.imageUrl
-                        ? <Image source={{ uri: item.imageUrl }} style={{ width: 40, height: 40, borderRadius: 6, marginRight: 8 }} />
-                        : <View style={{ width: 40, height: 40, borderRadius: 6, marginRight: 8, backgroundColor: "#0b1220", alignItems: "center", justifyContent: "center" }}><Text>🍎</Text></View>
-                      }
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: "#fff", fontWeight: "600" }}>{item.name}</Text>
-                        {!!item.brand && <Text style={{ color: "#8ba7c4", fontSize: 12 }}>{item.brand}</Text>}
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  onEndReached={() => !loading && hasMore && setPage(p => p + 1)}
-                  onEndReachedThreshold={0.4}
-                />
-              )}
-            </View>
-
-            {/* Selecionado + porção */}
-            {selected && (
-              <View style={{ marginTop: 10 }}>
-                <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>{selected.name}</Text>
-                <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
-                  Por 100g — Carb {selected.nutrientsPer100g.carbs_g ?? 0} g • Prot {selected.nutrientsPer100g.protein_g ?? 0} g • Gord {selected.nutrientsPer100g.fat_g ?? 0} g
-                </Text>
-
-                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>Porção (g)</Text>
-                <TextInput
-                  value={grams}
-                  onChangeText={(t) => setGrams(t.replace(/[^0-9]/g, ""))}
-                  keyboardType="numeric"
-                  style={styles.modalInput}
-                  placeholder="100"
-                  placeholderTextColor="#8ba7c4"
-                />
-
-                {Number(grams) > 0 && (
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
-                    {(() => {
-                      const m = macrosForServing(selected.nutrientsPer100g, Number(grams));
-                      return (
-                        <>
-                          <Pill label="Carb" value={m.carbs_g} unit="g" />
-                          <Pill label="Prot" value={m.protein_g} unit="g" />
-                          <Pill label="Gord" value={m.fat_g} unit="g" />
-                          <Pill label="KCal" value={m.kcal} unit="kcal" />
-                        </>
-                      );
-                    })()}
-                  </View>
-                )}
-              </View>
-            )}
-
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-              <Button title="Cancelar" color="#FF4C4C" onPress={() => setModalVisible(false)} />
-              <Button title="Adicionar" onPress={addSelectedToMeal} disabled={!selected || !(Number(grams) > 0)} />
-            </View>
+            <TextInput
+              placeholder="Nome do alimento"
+              placeholderTextColor="#888"
+              value={foodName}
+              onChangeText={setFoodName}
+              style={styles.modalInput}
+            />
+            <TextInput
+              placeholder="Gramas"
+              placeholderTextColor="#888"
+              value={foodGrams}
+              onChangeText={setFoodGrams}
+              style={styles.modalInput}
+              keyboardType="numeric"
+            />
+            <Button title="Salvar" onPress={saveFood} />
+            <Button
+              title="Cancelar"
+              onPress={() => setModalVisible(false)}
+              color="#FF4C4C"
+            />
           </View>
         </View>
       </Modal>
 
       {/* Modal Remover */}
-      <Modal visible={customModalVisible} animationType="slide" transparent>
+      <Modal
+        visible={customModalVisible}
+        animationType="slide"
+        transparent={true}
+      >
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>Remover alimento</Text>
-            {currentMeal?.items.map((it) => (
-              <TouchableOpacity key={it.id} onPress={() => removeItem(currentMeal!.id, it.id)}>
-                <Text style={{ fontSize: 16, padding: 6, color: "#fff" }}>{it.label} ({it.grams}g) ❌</Text>
-              </TouchableOpacity>
-            ))}
-            <Button title="Fechar" onPress={() => setCustomModalVisible(false)} color="#FF4C4C" />
+            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>
+              Remover alimento
+            </Text>
+            {selectedMealForCustom &&
+              selectedMealForCustom.items.split(", ").map((food: string) => (
+                <TouchableOpacity
+                  key={food}
+                  onPress={() => removeFoodFromMeal(food)}
+                >
+                  <Text style={{ fontSize: 16, padding: 5, color: "#fff" }}>
+                    {food} ❌
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            <Button
+              title="Fechar"
+              onPress={() => setCustomModalVisible(false)}
+              color="#FF4C4C"
+            />
           </View>
         </View>
       </Modal>
 
-      <Image source={require("../../assets/images/horusNew.png")} style={styles.logo} accessibilityLabel="Horus Nutrition logo" />
-    </View>
-  );
-}
-
-function Pill({ label, value, unit }: { label: string; value: number; unit: string }) {
-  return (
-    <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "#F1F5F9", marginRight: 8, marginBottom: 6 }}>
-      <Text style={{ fontSize: 12, color: "#0F172A" }}>{label}: <Text style={{ fontWeight: "700" }}>{value}</Text> {unit}</Text>
+      <Image
+        source={require("../../assets/images/horusNew.png")}
+        style={styles.logo}
+        accessibilityLabel="Horus Nutrition logo"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
-  title: { fontSize: 24, fontWeight: "bold", marginTop: 60, marginBottom: 20, textAlign: "center", color: "#0057C9" },
-  donutsCardContainer: {
-    flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around",
-    backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 16, marginHorizontal: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 60,
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#0057C9",
   },
-  donutRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around", width: "100%" },
+  donutsCardContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  donutRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    width: "100%",
+  },
   donutContainer: { alignItems: "center", margin: 10, width: 120 },
   donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
   donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#0057C9", marginTop: 30, marginBottom: 10, marginLeft: 16 },
-  mealCard: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)", padding: 16, borderRadius: 12, marginBottom: 12, marginHorizontal: 16,
-    borderWidth: 1, borderColor: "#0057C9",
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#0057C9",
+    marginTop: 30,
+    marginBottom: 10,
+    marginLeft: 16,
   },
-  mealTitle: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  mealCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#0057C9",
+  },
+  mealTitle: { color: "white", fontSize: 16, fontWeight: "bold" },
   mealItems: { color: "#aaa", fontSize: 14, marginTop: 4 },
-  addButton: { backgroundColor: "#0057C9", borderRadius: 30, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 40, left: 20 },
-
-  modalBackground: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" },
-  modalContent: { width: "90%", backgroundColor: "#000", borderRadius: 12, padding: 16, borderColor: "#5692B7", borderWidth: 1 },
-
-  searchContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#0057C9", borderRadius: 10, paddingHorizontal: 10, backgroundColor: "#000" },
-  modalInput: { borderWidth: 1, borderColor: "#0057C9", borderRadius: 8, marginVertical: 8, padding: 8, backgroundColor: "#000", color: "#fff" },
+  addButton: {
+    backgroundColor: "#0057C9",
+    borderRadius: 30,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dietCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 16,
+  },
+  dietCardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#36A2EB",
+    marginBottom: 8,
+  },
+  dietCardItem: { fontSize: 14, color: "#fff", marginBottom: 4 },
+  logo: {
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
+    position: "absolute",
+    top: 40,
+    left: 20,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#000",
+    borderRadius: 12,
+    padding: 20,
+    borderColor: "#5692B7",
+    borderWidth: 1,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    borderRadius: 8,
+    marginVertical: 10,
+    padding: 8,
+    backgroundColor: "#000",
+    color: "#fff",
+  },
 });

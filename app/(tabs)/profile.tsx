@@ -1,6 +1,13 @@
 // app/(tabs)/more.tsx
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -8,25 +15,25 @@ export default function MoreScreen() {
   const router = useRouter();
 
   const options = [
-    { 
-      icon: "person-circle-outline", 
-      label: "Meu Perfil", 
-      action: () => router.push("/profile")
+    {
+      icon: "person-circle-outline",
+      label: "Meu Perfil",
+      action: () => router.push("/profile"),
     },
-    { 
-      icon: "settings-outline", 
-      label: "Configurações", 
-      action: () => router.push("/settings") 
+    {
+      icon: "settings-outline",
+      label: "Configurações",
+      action: () => router.push("/settings"),
     },
-    { 
-      icon: "information-circle-outline", 
-      label: "Sobre o App", 
-      action: () => router.push("/about")
+    {
+      icon: "information-circle-outline",
+      label: "Sobre o App",
+      action: () => router.push("/about"),
     },
-    { 
-      icon: "log-out-outline", 
-      label: "Sair", 
-      action: () => router.replace("/login") 
+    {
+      icon: "log-out-outline",
+      label: "Sair",
+      action: () => router.replace("/login"),
     },
   ];
 
@@ -44,17 +51,19 @@ export default function MoreScreen() {
       <Text style={styles.header}>Mais opções</Text>
 
       {options.map((item, index) => (
-        <TouchableOpacity 
-          key={index} 
-          style={[styles.option, item.label === "Sair" && styles.logoutOption]} 
+        <TouchableOpacity
+          key={index}
+          style={[styles.option, item.label === "Sair" && styles.logoutOption]}
           onPress={item.action}
         >
-          <Ionicons 
-            name={item.icon as any} 
-            size={24} 
-            color={item.label === "Sair" ? "#D9534F" : "#333"} 
+          <Ionicons
+            name={item.icon as any}
+            size={24}
+            color={item.label === "Sair" ? "#D9534F" : "#333"}
           />
-          <Text style={[styles.label, item.label === "Sair" && styles.logoutLabel]}>
+          <Text
+            style={[styles.label, item.label === "Sair" && styles.logoutLabel]}
+          >
             {item.label}
           </Text>
         </TouchableOpacity>

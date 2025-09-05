@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image, // <- adicionei
 } from "react-native";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useState } from "react";
@@ -14,15 +13,8 @@ export default function CafeDaManhaPage() {
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
-      <Image
-        source={require("../../assets/images/horusNew.png")}
-        style={styles.logo}
-        accessibilityLabel="Logo Horus"
-      />
-
       {/* Header */}
-      <Text style={styles.header}>Pesquise seu Alimento</Text>
+      <Text style={styles.header}>Café da manhã</Text>
 
       {/* Campo de busca */}
       <View style={styles.searchContainer}>
@@ -57,18 +49,9 @@ export default function CafeDaManhaPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-    paddingTop: 40,
+    backgroundColor: "#fff",
+    paddingTop: 50,
     paddingHorizontal: 15,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-    position: "absolute",
-    top: 10,
-    left: 20,
-    marginTop: 30,
   },
   header: {
     fontSize: 22,
@@ -76,8 +59,6 @@ const styles = StyleSheet.create({
     color: "#0057C9",
     textAlign: "center",
     marginBottom: 20,
-    marginTop: 22,
-    fontFamily: "Roboto",
   },
   searchContainer: {
     flexDirection: "row",
@@ -86,15 +67,14 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 25,
     paddingHorizontal: 12,
-    backgroundColor: "#000",
+    backgroundColor: "#f9f9f9",
     marginBottom: 20,
   },
   searchInput: {
     flex: 1,
     height: 45,
     marginLeft: 8,
-    color: "#fff",
-    fontFamily: "Roboto",
+    color: "#000",
   },
   buttonsContainer: {
     flexDirection: "row",
@@ -105,7 +85,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
     padding: 20,
-    backgroundColor: "#000",
+    backgroundColor: "#f9f9f9",
     borderWidth: 1,
     borderColor: "#0057C9",
     borderRadius: 10,
@@ -117,6 +97,25 @@ const styles = StyleSheet.create({
     color: "#0057C9",
     textAlign: "center",
     fontWeight: "500",
-    fontFamily: "Roboto",
+  },
+  bottomMenu: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderColor: "#ddd",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+  },
+  menuItem: {
+    alignItems: "center",
+  },
+  menuText: {
+    fontSize: 12,
+    color: "#0057C9",
+    marginTop: 4,
   },
 });

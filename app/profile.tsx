@@ -15,7 +15,6 @@ export default function ProfileScreen() {
   return (
     <View style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
-        
         {/* Header com logo + título */}
         <View style={styles.header}>
           <Image
@@ -82,13 +81,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 25,
   },
-  logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 25, left: 5 },
+  logo: {
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
+    position: "absolute",
+    top: 25,
+    left: 5,
+  },
   title: {
     flex: 1,
     fontSize: 26,
     fontWeight: "bold",
     color: "#0057C9",
-    marginTop:40,
+    marginTop: 40,
     textAlign: "center",
   },
   profileBox: {
