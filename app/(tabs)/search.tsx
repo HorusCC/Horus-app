@@ -35,21 +35,6 @@ export default function CafeDaManhaPage() {
           placeholderTextColor="#5692B7"
         />
       </View>
-
-      {/* Botões principais */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button}>
-          <MaterialIcons name="qr-code-scanner" size={30} color="#0057C9" />
-          <Text style={styles.buttonText}>
-            Fazer leitura em{"\n"}código de barras
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button}>
-          <FontAwesome5 name="qrcode" size={30} color="#0057C9" />
-          <Text style={styles.buttonText}>Fazer leitura em{"\n"}código QR</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
