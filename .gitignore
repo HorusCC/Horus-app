@@ -35,3 +35,44 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Android (build e caches)
+android/.gradle/
+android/gradle/caches/
+android/gradle/daemon/
+android/gradle/native/
+android/gradle/notifications/
+android/gradle/scans/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+android/*.keystore
+android/*.jks
+
+# MUITO IMPORTANTE: manter o wrapper do Gradle
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
