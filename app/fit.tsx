@@ -1,42 +1,11 @@
 // app/fit.tsx
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal,
-  TextInput, Button, Platform, PermissionsAndroid, Alert, NativeModules
+  TextInput, Button, Alert
 } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
-import { BleManager, Device, Characteristic } from "react-native-ble-plx";
-
-// 🔹 Importa Google Fit
-import GoogleFit, { Scopes } from "react-native-google-fit";
-
-/* ====================== Utils: Base64 ====================== */
-const atobSafe = (b64: string) => {
-  if (typeof globalThis.atob === "function") return globalThis.atob(b64);
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-  let str = "", i = 0;
-  b64 = b64.replace(/[^A-Za-z0-9+/=]/g, "");
-  while (i < b64.length) {
-    const e1 = chars.indexOf(b64[i++]);
-    const e2 = chars.indexOf(b64[i++]);
-    const e3 = chars.indexOf(b64[i++]);
-    const e4 = chars.indexOf(b64[i++]);
-    const c1 = (e1 << 2) | (e2 >> 4);
-    const c2 = ((e2 & 15) << 4) | (e3 >> 2);
-    const c3 = ((e3 & 3) << 6) | e4;
-    str += String.fromCharCode(c1);
-    if (e3 !== 64) str += String.fromCharCode(c2);
-    if (e4 !== 64) str += String.fromCharCode(c3);
-  }
-  return str;
-};
-const b64ToBytes = (b64: string) => {
-  const bin = atobSafe(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-};
 
 /* ====================== UI: Donut ====================== */
 const Donut = ({
@@ -69,126 +38,87 @@ const Donut = ({
 };
 
 /* ====================== Tipos & Constantes ====================== */
-type Exercise = { id: string; name: string; sets: number; reps: number };
-const HR_SERVICE = "180D";
-const HR_MEAS_CHAR = "2A37";
+// Duas categorias: cardio (tempo) e musculação (tempo + repetições)
+export type ExerciseBase = { id: string; name: string; type: 'cardio' | 'strength' };
+export type CardioExercise = ExerciseBase & { type: 'cardio'; minutes: number };
+export type StrengthExercise = ExerciseBase & { type: 'strength'; sets: number; reps: number; minutes?: number };
+export type Exercise = CardioExercise | StrengthExercise;
+
+const SMARTWATCH_API_URL = 'https://YOUR_SMARTWATCH_API.example.com'; // << ajuste para sua API
+const SMARTWATCH_TOKEN = 'REPLACE_WITH_TOKEN'; // << injete via .env ou SecureStore
 
 /* ====================== Componente ====================== */
 export default function Fit() {
-  // treino (visual igual home)
+  // 🔹 Seeds
   const [exercises, setExercises] = useState<Exercise[]>([
-    { id: "1", name: "Supino reto", sets: 4, reps: 10 },
-    { id: "2", name: "Agachamento", sets: 4, reps: 8 },
+    { id: 'c1', name: 'Cardio', type: 'cardio', minutes: 30 },
+    { id: 'm1', name: 'Musculação', type: 'strength', sets: 4, reps: 12, minutes: 40 },
   ]);
+
+  // Metas (exemplo)
   const weeklyGoal = 5;
   const completed = useMemo(() => Math.min(weeklyGoal, Math.ceil(exercises.length / 2)), [exercises.length]);
-  const cardioGoal = 30, cardioDone = 18;
-  const strengthGoal = 20;
-  const strengthDone = exercises.reduce((acc, e) => acc + e.sets, 0);
+  const cardioGoal = 60; // minutos/dia
+  const cardioDone = useMemo(() => exercises.filter(e => e.type === 'cardio').reduce((acc, e) => acc + e.minutes, 0), [exercises]);
+  const strengthGoal = 20; // séries
+  const strengthDone = useMemo(() => exercises.filter(e => e.type === 'strength').reduce((acc, e) => acc + e.sets, 0), [exercises]);
 
-  // 🔹 Estado de calorias vindas do Google Fit
+  // 🔹 Calorias vindas do Smartwatch (API)
   const [caloriesBurned, setCaloriesBurned] = useState(0);
+  useEffect(() => { fetchCaloriesFromSmartwatch().catch(console.error); }, []);
 
-  // modal add exercício
+  async function fetchCaloriesFromSmartwatch() {
+    try {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const res = await fetch(`${SMARTWATCH_API_URL}/metrics/daily?date=${today}`, {
+        headers: { 'Authorization': `Bearer ${SMARTWATCH_TOKEN}` }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // ajuste ao seu payload real
+      // Exemplo esperado: { calories: number }
+      setCaloriesBurned(Number(data.calories) || 0);
+    } catch (e) {
+      console.error('Erro ao buscar calorias do smartwatch:', e);
+    }
+  }
+
+  // 🔹 Estado do modal (permite escolher categoria)
   const [modalVisible, setModalVisible] = useState(false);
-  const [name, setName] = useState(""), [sets, setSets] = useState("3"), [reps, setReps] = useState("10");
-  const openAdd = () => { setName(""); setSets("3"); setReps("10"); setModalVisible(true); };
+  const [category, setCategory] = useState<'cardio' | 'strength'>('cardio');
+  const [name, setName] = useState('Cardio');
+  const [minutes, setMinutes] = useState('30');
+  const [sets, setSets] = useState('4');
+  const [reps, setReps] = useState('12');
+
+  const openAdd = (preset?: 'cardio' | 'strength') => {
+    const cat = preset ?? 'cardio';
+    setCategory(cat);
+    setName(cat === 'cardio' ? 'Cardio' : 'Musculação');
+    setMinutes('30'); setSets('4'); setReps('12');
+    setModalVisible(true);
+  };
+
   const addExercise = () => {
-    const s = Number(sets), r = Number(reps);
-    if (!name.trim() || !Number.isFinite(s) || s <= 0 || !Number.isFinite(r) || r <= 0) return;
-    setExercises(prev => [{ id: Math.random().toString(36).slice(2), name: name.trim(), sets: s, reps: r }, ...prev]);
+    if (category === 'cardio') {
+      const m = Number(minutes);
+      if (!name.trim() || !Number.isFinite(m) || m <= 0) return;
+      const ex: CardioExercise = { id: Math.random().toString(36).slice(2), name: name.trim(), type: 'cardio', minutes: m };
+      setExercises(prev => [ex, ...prev]);
+    } else {
+      const s = Number(sets), r = Number(reps); const m = Number(minutes) || undefined;
+      if (!name.trim() || !Number.isFinite(s) || s <= 0 || !Number.isFinite(r) || r <= 0) return;
+      const ex: StrengthExercise = { id: Math.random().toString(36).slice(2), name: name.trim(), type: 'strength', sets: s, reps: r, minutes: m };
+      setExercises(prev => [ex, ...prev]);
+    }
     setModalVisible(false);
   };
+
   const removeExercise = (id: string) => setExercises(prev => prev.filter(e => e.id !== id));
 
-  /* ====================== Google Fit ====================== */
-  useEffect(() => {
-    const initGoogleFit = async () => {
-      if (!GoogleFit) return;
-
-      const options = {
-        scopes: [
-          Scopes.FITNESS_ACTIVITY_READ,
-          Scopes.FITNESS_ACTIVITY_WRITE,
-          Scopes.FITNESS_BODY_READ,
-          Scopes.FITNESS_BODY_WRITE,
-        ],
-      };
-
-      try {
-        const authResult = await GoogleFit.authorize(options);
-        if (authResult.success) {
-          console.log("Google Fit autorizado ✅");
-          await loadCalories();
-        } else {
-          console.warn("Google Fit não autorizado:", authResult.message);
-        }
-      } catch (e) {
-        console.error("Erro ao autorizar Google Fit:", e);
-      }
-    };
-
-    initGoogleFit();
-  }, []);
-
-  const loadCalories = async () => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-
-    try {
-      const res = await GoogleFit.getDailyCalorieSamples({
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        basalCalculation: true,
-      });
-      if (res.length) {
-        const today = res.find(r => r.startDate.includes(start.toISOString().split("T")[0]));
-        setCaloriesBurned(today?.calorie ?? 0);
-      }
-    } catch (e) {
-      console.error("Erro ao buscar calorias:", e);
-    }
-  };
-
-  /* ====================== BLE ====================== */
-  const isBleNativeAvailable = !!(NativeModules as any).BleClientManager;
-  const managerRef = useRef<BleManager | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-  const [heartRate, setHeartRate] = useState<number | null>(null);
-  const hrSubscriptionRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    if (isBleNativeAvailable) {
-      managerRef.current = new BleManager();
-    }
-    return () => {
-      try { hrSubscriptionRef.current?.(); } catch {}
-      try { managerRef.current?.destroy(); } catch {}
-    };
-  }, []);
-
-  const requestPermsAndroid = async () => {
-    if (Platform.OS !== "android") return true;
-    const PERM: any = (PermissionsAndroid as any).PERMISSIONS;
-    const RESULTS: any = (PermissionsAndroid as any).RESULTS;
-    const perms = [
-      PERM?.ACCESS_FINE_LOCATION,
-      PERM?.BLUETOOTH_SCAN,
-      PERM?.BLUETOOTH_CONNECT,
-    ].filter(Boolean);
-    const res = await PermissionsAndroid.requestMultiple(perms);
-    return Object.values(res).every((v) => v === RESULTS.GRANTED);
-  };
-
-  const parseHr = (c: Characteristic) => {
-    if (!c?.value) return;
-    const bytes = b64ToBytes(c.value);
-    const flags = bytes[0] ?? 0;
-    const hr = (flags & 0x01) ? (bytes[1] | (bytes[2] << 8)) : bytes[1];
-    if (Number.isFinite(hr)) setHeartRate(hr);
-  };
+  // Helpers de render
+  const cardio = exercises.filter(e => e.type === 'cardio');
+  const strength = exercises.filter(e => e.type === 'strength');
 
   /* ====================== JSX ====================== */
   return (
@@ -201,19 +131,132 @@ export default function Fit() {
             <Donut value={completed} total={weeklyGoal} color="#36A2EB" label="Meta Semanal" suffix="" />
             <Donut value={cardioDone} total={cardioGoal} color="#4BC0C0" label="Cardio (min)" suffix="m" />
             <Donut value={strengthDone} total={strengthGoal} color="#FF6384" label="Séries Força" suffix="" />
-            <Donut value={caloriesBurned} total={500} color="#FFA500" label="Calorias" suffix=" kcal" />
+            <Donut value={caloriesBurned} total={500} color="#FFA500" label="Calorias (watch)" suffix=" kcal" />
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Smartwatch (BLE)</Text>
-        <View style={styles.mealCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Frequência Cardíaca</Text>
-            <Text style={{ color: "#aaa", marginTop: 6 }}>
-              {heartRate ? `${heartRate} bpm` : (isBleNativeAvailable ? "Sem leitura" : "Indisponível no Expo Go")}
-            </Text>
-          </View>
+        {/* ===== Categoria 1: Cardio (tempo) ===== */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 20 }}>
+          <Text style={styles.sectionTitle}>Cardio (minutos)</Text>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity onPress={() => openAdd('cardio')} style={styles.addButton}>
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
         </View>
+
+        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+          {cardio.map((e) => (
+            <View key={e.id} style={styles.exerciseItem}>
+              <View>
+                <Text style={styles.exerciseName}>{e.name}</Text>
+                <Text style={styles.exerciseMeta}>{e.minutes} min</Text>
+              </View>
+              <TouchableOpacity onPress={() => removeExercise(e.id)}>
+                <Ionicons name="trash" size={18} color="#ff6b6b" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {cardio.length === 0 && (
+            <Text style={{ color: '#aaa', textAlign: 'center', marginTop: 12 }}>Nenhuma atividade de cardio</Text>
+          )}
+        </View>
+
+        {/* ===== Categoria 2: Musculação (tempo + repetições) ===== */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 26 }}>
+          <Text style={styles.sectionTitle}>Musculação (séries x repetições)</Text>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity onPress={() => openAdd('strength')} style={styles.addButton}>
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+          {strength.map((e) => (
+            <View key={e.id} style={styles.exerciseItem}>
+              <View>
+                <Text style={styles.exerciseName}>{e.name}</Text>
+                <Text style={styles.exerciseMeta}>{e.sets} x {e.reps}{e.minutes ? `  ·  ${e.minutes} min` : ''}</Text>
+              </View>
+              <TouchableOpacity onPress={() => removeExercise(e.id)}>
+                <Ionicons name="trash" size={18} color="#ff6b6b" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {strength.length === 0 && (
+            <Text style={{ color: '#aaa', textAlign: 'center', marginTop: 12 }}>Nenhum exercício de musculação</Text>
+          )}
+        </View>
+
+        {/* Modal para adicionar exercício */}
+        <Modal transparent visible={modalVisible} animationType="fade" onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalBackground}>
+            <View style={styles.modalContent}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Novo exercício</Text>
+
+              {/* Toggle simples de categoria */}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 4 }}>
+                <TouchableOpacity onPress={() => setCategory('cardio')} style={[styles.catButton, category === 'cardio' && styles.catButtonActive]}>
+                  <Text style={{ color: '#fff' }}>Cardio</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setCategory('strength')} style={[styles.catButton, category === 'strength' && styles.catButtonActive]}>
+                  <Text style={{ color: '#fff' }}>Musculação</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                placeholder={category === 'cardio' ? 'Nome (Cardio)' : 'Nome (ex: Supino)'}
+                placeholderTextColor="#888"
+                value={name}
+                onChangeText={setName}
+                style={styles.modalInput}
+              />
+
+              {/* Campos por categoria */}
+              {category === 'cardio' ? (
+                <TextInput
+                  placeholder="Minutos (ex: 30)"
+                  placeholderTextColor="#888"
+                  value={minutes}
+                  onChangeText={setMinutes}
+                  keyboardType="numeric"
+                  style={styles.modalInput}
+                />
+              ) : (
+                <>
+                  <TextInput
+                    placeholder="Séries (ex: 4)"
+                    placeholderTextColor="#888"
+                    value={sets}
+                    onChangeText={setSets}
+                    keyboardType="numeric"
+                    style={styles.modalInput}
+                  />
+                  <TextInput
+                    placeholder="Repetições (ex: 12)"
+                    placeholderTextColor="#888"
+                    value={reps}
+                    onChangeText={setReps}
+                    keyboardType="numeric"
+                    style={styles.modalInput}
+                  />
+                  <TextInput
+                    placeholder="Minutos (opcional)"
+                    placeholderTextColor="#888"
+                    value={minutes}
+                    onChangeText={setMinutes}
+                    keyboardType="numeric"
+                    style={styles.modalInput}
+                  />
+                </>
+              )}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+                <Button title="Adicionar" onPress={addExercise} />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -232,14 +275,18 @@ const styles = StyleSheet.create({
   donutContainer: { alignItems: "center", margin: 10, width: 120 },
   donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4, color: "#fff" },
   donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#0057C9", marginTop: 30, marginBottom: 10, marginLeft: 16 },
-  mealCard: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)", padding: 16, borderRadius: 12, marginBottom: 12, marginHorizontal: 16,
-    borderWidth: 1, borderColor: "#0057C9",
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#0057C9", marginTop: 0, marginBottom: 10 },
+  exerciseItem: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, marginBottom: 10,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)'
   },
+  exerciseName: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  exerciseMeta: { color: '#aaa', marginTop: 2 },
   addButton: { backgroundColor: "#0057C9", borderRadius: 30, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   modalBackground: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" },
   modalContent: { width: "90%", backgroundColor: "#000", borderRadius: 12, padding: 16, borderColor: "#5692B7", borderWidth: 1 },
   modalInput: { borderWidth: 1, borderColor: "#0057C9", borderRadius: 8, marginVertical: 8, padding: 8, backgroundColor: "#000", color: "#fff" },
+  catButton: { backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderColor: '#0057C9', borderWidth: 1 },
+  catButtonActive: { backgroundColor: 'rgba(0,87,201,0.5)' },
 });
