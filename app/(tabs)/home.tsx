@@ -9,6 +9,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMacros } from "../contexts/MacroContext";
 import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
 import { macrosForServing, Macros } from "../../src/utils/nutrition";
+import { useRouter } from "expo-router"; // ← ADICIONADO apenas para o botão "Fit"
 
 type MealItem = { id: string; label: string; grams: number; macros: Macros };
 type Meal = { id: string; name: string; items: MealItem[] };
@@ -151,8 +152,29 @@ export default function Home() {
     { label: "Calorias", value: carb * 4 + protein * 4 + fat * 9, color: "#4BC0C0", isCalorie: true },
   ];
 
+  const router = useRouter(); // ← usado apenas pelo botão "Fit"
+
   return (
     <View style={styles.containerOuter}>
+      {/* Botão "Fit" no canto superior direito */}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          top: 60,
+          right: 20,
+          backgroundColor: "#000",
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "#0057C9",
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          zIndex: 10,
+        }}
+        onPress={() => router.push("/fit")}
+      >
+        <Ionicons name="barbell-outline" size={22} color="#fff" />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
 
