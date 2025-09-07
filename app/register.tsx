@@ -14,7 +14,12 @@ export default function CadastroPage() {
   const [altura, setAltura] = useState("");
   const [peso, setPeso] = useState("");
   const [atividade, setAtividade] = useState("");
-  const [resultado, setResultado] = useState<{ imc: number, tmb: number, classificacao: string } | null>(null);
+  const [objetivo, setObjetivo] = useState("");
+  const [resultado, setResultado] = useState<{
+    imc: number;
+    tmb: number;
+    classificacao: string;
+  } | null>(null);
 
   useEffect(() => {
     const alturaM = parseFloat(altura) / 100;
@@ -63,19 +68,39 @@ export default function CadastroPage() {
       <Text style={styles.subtitle}>
         Preencha os dados abaixo para continuar
       </Text>
-    
+
       <Text style={styles.label}>Nome</Text>
       <Input placeholder="Nome" value={nome} onChangeText={setNome} />
       <Text style={styles.label}>Email</Text>
       <Input placeholder="Email" value={email} onChangeText={setEmail} />
       <Text style={styles.label}>Senha</Text>
-      <Input placeholder="Senha" value={senha} secureTextEntry onChangeText={setSenha} />
+      <Input
+        placeholder="Senha"
+        value={senha}
+        secureTextEntry
+        onChangeText={setSenha}
+      />
       <Text style={styles.label}>Idade</Text>
-      <Input placeholder="Idade" value={idade} keyboardType="numeric" onChangeText={setIdade} />
+      <Input
+        placeholder="Idade"
+        value={idade}
+        keyboardType="numeric"
+        onChangeText={setIdade}
+      />
       <Text style={styles.label}>Altura</Text>
-      <Input placeholder="Altura (cm)" value={altura} keyboardType="numeric" onChangeText={setAltura} />
+      <Input
+        placeholder="Altura (cm)"
+        value={altura}
+        keyboardType="numeric"
+        onChangeText={setAltura}
+      />
       <Text style={styles.label}>Peso</Text>
-      <Input placeholder="Peso (kg)" value={peso} keyboardType="numeric" onChangeText={setPeso} />
+      <Input
+        placeholder="Peso (kg)"
+        value={peso}
+        keyboardType="numeric"
+        onChangeText={setPeso}
+      />
 
       <Text style={styles.label}>Sexo</Text>
       <Select
@@ -99,11 +124,26 @@ export default function CadastroPage() {
         ]}
       />
 
+      <Text style={styles.label}>Objetivo</Text>
+      <Select
+        selectedValue={objetivo}
+        onValueChange={setObjetivo}
+        options={[
+          { label: "Emagrecimento", value: "emagrecimento" },
+          { label: "Manutenção", value: "manutencao" },
+          { label: "Ganho de massa muscular", value: "ganho_massa" },
+        ]}
+      />
+
       {resultado && (
         <View style={styles.resultContainer}>
           <Text style={styles.resultText}>IMC: {resultado.imc.toFixed(2)}</Text>
-          <Text style={styles.resultText}>TMB: {resultado.tmb.toFixed(2)} kcal/dia</Text>
-          <Text style={styles.resultText}>Classificação: {resultado.classificacao}</Text>
+          <Text style={styles.resultText}>
+            TMB: {resultado.tmb.toFixed(2)} kcal/dia
+          </Text>
+          <Text style={styles.resultText}>
+            Classificação: {resultado.classificacao}
+          </Text>
 
           <View style={styles.table}>
             <Text style={styles.tableTitle}>Classificação IMC</Text>
@@ -115,7 +155,11 @@ export default function CadastroPage() {
         </View>
       )}
 
-      <Button title="Cadastrar" onPress={() => router.push("/(tabs)/home")} style={styles.button} />
+      <Button
+        title="Cadastrar"
+        onPress={() => router.push("/(tabs)/home")}
+        style={styles.button}
+      />
     </ScrollView>
   );
 }
@@ -171,8 +215,8 @@ const styles = StyleSheet.create({
   tableText: {
     color: "#ccc",
   },
-label: {
-    marginBottom: 10, 
+  label: {
+    marginBottom: 10,
     color: "#ffffffff",
   },
 });
