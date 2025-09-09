@@ -8,12 +8,26 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { useTheme } from "@/contexts/ThemeContext";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+const schema = z.object({
+  email: z.string().email({ message: "Email inválido" }),
+  password: z
+    .string()
+    .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
+    .max(100),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -25,10 +39,28 @@ export default function LoginPage() {
     { email: "admin@email.com", password: "admin123" },
   ];
 
-  function handleLogin() {
-    const userExists = users.find(
-      (user) => user.email === email && user.password === password
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
+
+  useEffect(() => {
+    if (!isValid) {
+      router.push("/(tabs)/home");
+    }
+  }, [isValid]);
+
+  function handleCreate(data: FormData) {
+    const userExists = users.some(
+      (user) => user.email === data.email && user.password === data.password
     );
+
+    if (!isValid) {
+      router.push("/(tabs)/home");
+    }
 
     if (userExists) {
       Toast.show({
@@ -69,27 +101,37 @@ export default function LoginPage() {
           color="#5692B7"
           style={styles.icon}
         />
-        <TextInput
+        <Input
+          name="email"
           style={styles.input}
+          control={control}
           placeholder="Email"
+          type="email"
+          error={errors.email?.message}
+          placeholderTextColor="#5692B7"
+          keyboardType="default"
           value={email}
           onChangeText={setEmail}
-          placeholderTextColor="#5692B7"
         />
       </View>
 
       <View style={styles.inputContainer}>
         <MaterialIcons
-          name="security"
+          name="lock"
           size={25}
           color="#5692B7"
           style={styles.icon}
         />
-        <TextInput
+        <Input
+          name="password"
           style={styles.input}
+          control={control}
           placeholder="Senha"
+          error={errors.password?.message}
           placeholderTextColor="#5692B7"
           secureTextEntry
+          type="password"
+          keyboardType="default"
           value={password}
           onChangeText={setPassword}
         />
@@ -102,22 +144,36 @@ export default function LoginPage() {
             onValueChange={setSelection}
             style={styles.checkbox}
           />
-          <Text style={styles.labelSecundary}>Lembrar-me?</Text>
+          <Text
+            style={[styles.labelSecundary, { color: colors.azulClaroPadrao }]}
+          >
+            Lembrar-me?
+          </Text>
         </View>
 
         {/* Botão de esqueci a senha */}
-        <TouchableOpacity onPress={() => router.push("/forgot")}>
-          <Text style={[styles.subtitle, { color: colors.text }]}>
+        <Pressable onPress={() => router.push("/forgot")}>
+          <Text style={[styles.textForgot, { color: colors.text }]}>
             Esqueci a senha
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      <Button title="Entrar" style={styles.button} onPress={handleLogin} />
+      <Pressable
+        style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+        onPress={handleSubmit(handleCreate)}
+      >
+        <Text style={[styles.subtitle, { color: colors.textButton }]}>
+          Entrar
+        </Text>
+      </Pressable>
 
-      <Text style={styles.labelSecundary}>
+      <Text style={[styles.labelSecundary, { color: colors.text }]}>
         Novo por aqui?{" "}
-        <Text style={styles.register} onPress={() => router.push("/register")}>
+        <Text
+          style={[styles.register, { color: colors.azulClaroPadrao }]}
+          onPress={() => router.push("/register")}
+        >
           Registre-se
         </Text>
       </Text>
@@ -144,13 +200,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "500",
     textAlign: "center",
-    marginBottom: 20,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "700",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 10,
+    marginTop: 10,
   },
   checkboxContainer: {
     flexDirection: "row",
@@ -167,13 +223,13 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: 20,
+    borderRadius: 10,
   },
   dontHaveAccount: {
     textAlign: "right",
   },
   register: {
     fontWeight: "500",
-    color: "#5692B7",
   },
   label: {
     marginHorizontal: 8,
@@ -182,7 +238,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    color: "#5692B7",
     marginHorizontal: 8,
   },
   inputContainer: {
@@ -202,5 +257,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     color: "#000",
+  },
+  textForgot: {
+    fontWeight: "600",
+    fontSize: 16,
   },
 });

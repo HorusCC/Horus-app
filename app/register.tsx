@@ -4,6 +4,43 @@ import { Select } from "@/components/Select";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useTheme } from "@/contexts/ThemeContext";
+
+type FormData = z.infer<typeof schema>;
+
+const sexoValues = ["masculino", "feminino"] as const;
+const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
+const objetivoValues = ["emagrecimento", "manutencao", "ganho_massa"] as const;
+
+const schema = z.object({
+  nome: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
+  email: z.string().email({ message: "Email inválido" }),
+  senha: z
+    .string()
+    .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
+    .max(100),
+  idade: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Idade deve ser um número positivo",
+  }),
+  altura: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Altura deve ser um número positivo",
+  }),
+  peso: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Peso deve ser um número positivo",
+  }),
+  sexo: z.string().refine((v) => sexoValues.includes(v as any), {
+    message: "Selecione o sexo",
+  }),
+  atividade: z.string().refine((v) => atividadeValues.includes(v as any), {
+    message: "Selecione a atividade",
+  }),
+  objetivo: z.string().refine((v) => objetivoValues.includes(v as any), {
+    message: "Selecione o objetivo",
+  }),
+});
 
 export default function CadastroPage() {
   const [nome, setNome] = useState("");
@@ -20,6 +57,15 @@ export default function CadastroPage() {
     tmb: number;
     classificacao: string;
   } | null>(null);
+  const { colors, theme } = useTheme();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
   useEffect(() => {
     const alturaM = parseFloat(altura) / 100;
@@ -70,11 +116,26 @@ export default function CadastroPage() {
       </Text>
 
       <Text style={styles.label}>Nome</Text>
-      <Input placeholder="Nome" value={nome} onChangeText={setNome} />
+      <Input
+        name="nome"
+        style={styles.tableText}
+        control={control}
+        placeholder="Nome"
+        value={nome}
+        onChangeText={setNome}
+      />
       <Text style={styles.label}>Email</Text>
-      <Input placeholder="Email" value={email} onChangeText={setEmail} />
+      <Input
+        name="email"
+        control={control}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+      />
       <Text style={styles.label}>Senha</Text>
       <Input
+        name="senha"
+        control={control}
         placeholder="Senha"
         value={senha}
         secureTextEntry
@@ -82,6 +143,8 @@ export default function CadastroPage() {
       />
       <Text style={styles.label}>Idade</Text>
       <Input
+        name="idade"
+        control={control}
         placeholder="Idade"
         value={idade}
         keyboardType="numeric"
@@ -89,6 +152,9 @@ export default function CadastroPage() {
       />
       <Text style={styles.label}>Altura</Text>
       <Input
+        style={[styles.resultText, { marginBottom: 20 }]}
+        name="altura"
+        control={control}
         placeholder="Altura (cm)"
         value={altura}
         keyboardType="numeric"
@@ -96,6 +162,8 @@ export default function CadastroPage() {
       />
       <Text style={styles.label}>Peso</Text>
       <Input
+        name="peso"
+        control={control}
         placeholder="Peso (kg)"
         value={peso}
         keyboardType="numeric"
