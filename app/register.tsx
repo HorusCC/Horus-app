@@ -16,7 +16,7 @@ const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
 const objetivoValues = ["emagrecimento", "manutencao", "ganho_massa"] as const;
 
 const schema = z.object({
-  nome: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
+  nome: z.string().min(2, { message: "Nome deve ter pelo menos 3 caracteres" }),
   email: z.string().email({ message: "Email inválido" }),
   senha: z
     .string()
@@ -67,6 +67,11 @@ export default function CadastroPage() {
     resolver: zodResolver(schema),
   });
 
+  const genderOptions = [
+    { label: "Masculino", value: "masculino" },
+    { label: "Feminino", value: "feminino" },
+  ];
+
   useEffect(() => {
     const alturaM = parseFloat(altura) / 100;
     const pesoKg = parseFloat(peso);
@@ -105,85 +110,94 @@ export default function CadastroPage() {
   }, [nome, email, senha, sexo, idade, altura, peso, atividade]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: colors.background },
+      ]}
+    >
       <Image
         style={styles.image}
         source={require("../assets/images/horusNew.png")}
       />
-      <Text style={styles.title}>Criar conta</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Criar conta</Text>
       <Text style={styles.subtitle}>
         Preencha os dados abaixo para continuar
       </Text>
 
-      <Text style={styles.label}>Nome</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Nome</Text>
       <Input
         name="nome"
-        style={styles.tableText}
         control={control}
-        placeholder="Nome"
+        style={[styles.input, { backgroundColor: colors.blackTransparent }]}
+        placeholder="Digite seu nome:"
         value={nome}
         onChangeText={setNome}
       />
-      <Text style={styles.label}>Email</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
       <Input
         name="email"
         control={control}
-        placeholder="Email"
+        style={styles.input}
+        placeholder="Digite seu email:"
         value={email}
         onChangeText={setEmail}
       />
-      <Text style={styles.label}>Senha</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
       <Input
         name="senha"
         control={control}
-        placeholder="Senha"
+        style={styles.input}
+        placeholder="Digite sua senha:"
         value={senha}
         secureTextEntry
         onChangeText={setSenha}
       />
-      <Text style={styles.label}>Idade</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
       <Input
         name="idade"
         control={control}
-        placeholder="Idade"
+        style={styles.input}
+        placeholder="Digite sua idade:"
         value={idade}
         keyboardType="numeric"
         onChangeText={setIdade}
       />
-      <Text style={styles.label}>Altura</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
       <Input
-        style={[styles.resultText, { marginBottom: 20 }]}
         name="altura"
         control={control}
-        placeholder="Altura (cm)"
+        style={styles.input}
+        placeholder="Digite sua altura: (cm)"
         value={altura}
         keyboardType="numeric"
         onChangeText={setAltura}
       />
-      <Text style={styles.label}>Peso</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
       <Input
         name="peso"
         control={control}
-        placeholder="Peso (kg)"
+        style={styles.input}
+        placeholder="Digite seu peso: (kg)"
         value={peso}
         keyboardType="numeric"
         onChangeText={setPeso}
       />
 
-      <Text style={styles.label}>Sexo</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Sexo</Text>
       <Select
-        selectedValue={sexo}
-        onValueChange={setSexo}
-        options={[
-          { label: "Masculino", value: "masculino" },
-          { label: "Feminino", value: "feminino" },
-        ]}
+        name="sexo"
+        control={control}
+        options={genderOptions}
+        error={errors.sexo?.message}
       />
 
-      <Text style={styles.label}>Atividade Física</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Atividade Física
+      </Text>
       <Select
-        selectedValue={atividade}
-        onValueChange={setAtividade}
+        name="atividade"
+        control={control}
         options={[
           { label: "Sedentário", value: "sedentario" },
           { label: "Levemente ativo", value: "leve" },
@@ -192,10 +206,12 @@ export default function CadastroPage() {
         ]}
       />
 
-      <Text style={styles.label}>Objetivo</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Objetivo
+      </Text>
       <Select
-        selectedValue={objetivo}
-        onValueChange={setObjetivo}
+        name="objetivo"
+        control={control}
         options={[
           { label: "Emagrecimento", value: "emagrecimento" },
           { label: "Manutenção", value: "manutencao" },
@@ -284,7 +300,17 @@ const styles = StyleSheet.create({
     color: "#ccc",
   },
   label: {
-    marginBottom: 10,
-    color: "#ffffffff",
+    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  input: {
+    width: "auto",
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#0652b4ff",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
 });

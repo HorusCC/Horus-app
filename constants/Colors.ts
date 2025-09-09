@@ -11,7 +11,9 @@ export default {
     tabIconDefault: "#ccc",
     tabIconSelected: tintColorLight,
     textButton: "#fff",
+    textRegister: "#646464ff",
     azulClaroPadrao: "#5692B7",
+    blackTransparent: "#ffffff",
   },
   dark: {
     text: "#fff",
@@ -22,6 +24,8 @@ export default {
     tabIconDefault: "#ccc",
     tabIconSelected: tintColorDark,
     textButton: "#000000ff",
+    textRegister: "#ccc",
     azulClaroPadrao: "#5692B7",
+    blackTransparent: "#000",
   },
 };

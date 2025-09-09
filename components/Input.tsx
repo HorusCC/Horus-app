@@ -8,7 +8,6 @@ import {
   View,
   KeyboardTypeOptions,
 } from "react-native";
-import { MaskedTextInput } from "react-native-mask-text";
 import { Controller } from "react-hook-form";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -44,31 +43,6 @@ export function Input({
 }: InputProps) {
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
 
-  //   const togglePasswordVisibility = () => {
-  //     setIsPasswordVisible(!isPasswordVisible);
-  //   };
-
-  //   const getKeyboardType = () => {
-  //     switch (keyboardType) {
-  //       case "email-address":
-  //         return "email-address";
-  //       case "numeric":
-  //         return "number-pad";
-  //       case "phone-pad":
-  //         return "phone-pad";
-  //       case "decimal-pad":
-  //         return "decimal-pad";
-  //       case "password":
-  //         return "default";
-  //       case "url":
-  //         return "url";
-  //       case "visible-password":
-  //         return "default";
-  //       default:
-  //         return "default";
-  //     }
-  //   };
-
   return (
     <View style={styles.container}>
       <Controller
@@ -79,10 +53,11 @@ export function Input({
           <>
             <MaterialIcons size={25} color="#5692B7" style={styles.icon} />
             <TextInput
-              placeholder="Digite algo..."
+              placeholder={placeholder}
               placeholderTextColor={placeholderTextColor || "#999"}
               onBlur={onBlur}
               onChangeText={onChange}
+              style={[style, { style }]}
               value={value}
               keyboardType="default"
               secureTextEntry={secureTextEntry}
@@ -106,16 +81,6 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     position: "relative",
-  },
-  input: {
-    width: "auto",
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#0652b4ff",
-    backgroundColor: "#F6F6F6",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
   },
   inputError: {
     borderColor: "red",

@@ -18,6 +18,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useDataStore } from "@/store/data";
 
 const schema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -30,9 +31,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
   const [isSelected, setSelection] = useState(false);
-  const [password, setPassword] = useState("");
   const { colors, theme } = useTheme();
   const users = [
     { email: "lorenzo@email.com", password: "123456" },
@@ -47,27 +46,22 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   });
 
-  useEffect(() => {
-    if (!isValid) {
-      router.push("/(tabs)/home");
-    }
-  }, [isValid]);
+  const setPageOne = useDataStore((state) => state.setPageOne);
 
   function handleCreate(data: FormData) {
     const userExists = users.some(
       (user) => user.email === data.email && user.password === data.password
     );
 
-    if (!isValid) {
-      router.push("/(tabs)/home");
-    }
-
     if (userExists) {
+      setPageOne({
+        email: data.email,
+        senha: data.password,
+      });
       Toast.show({
         type: "success",
         text1: "Login realizado com sucesso!",
       });
-      setTimeout(() => router.push("/(tabs)/home"), 1000);
     } else {
       Toast.show({
         type: "error",
@@ -103,15 +97,12 @@ export default function LoginPage() {
         />
         <Input
           name="email"
-          style={styles.input}
           control={control}
           placeholder="Email"
           type="email"
           error={errors.email?.message}
           placeholderTextColor="#5692B7"
           keyboardType="default"
-          value={email}
-          onChangeText={setEmail}
         />
       </View>
 
@@ -124,7 +115,6 @@ export default function LoginPage() {
         />
         <Input
           name="password"
-          style={styles.input}
           control={control}
           placeholder="Senha"
           error={errors.password?.message}
@@ -132,8 +122,6 @@ export default function LoginPage() {
           secureTextEntry
           type="password"
           keyboardType="default"
-          value={password}
-          onChangeText={setPassword}
         />
       </View>
 
@@ -252,11 +240,6 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 4,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    color: "#000",
   },
   textForgot: {
     fontWeight: "600",
