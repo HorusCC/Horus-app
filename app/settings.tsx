@@ -7,31 +7,13 @@ import { useTheme } from "../app/contexts/ThemeContext";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isDark, toggleTheme } = useTheme(); // 🔹 tema global
 
-  const backgroundColor = isDark ? "#000" : "#fff";
-  const cardColor = isDark ? "#111" : "#f0f0f0";
-  const textColor = isDark ? "#fff" : "#000";
   const borderColor = "#0057C9";
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor }]}>
+    <ScrollView style={[styles.container, { }]}>
       <Text style={[styles.header, { color: "#0057C9" }]}>Configurações</Text>
-
-      {/* Tema escuro */}
-      <View style={[styles.optionRow, { backgroundColor: "#000", borderColor }]}>
-        <View style={styles.optionLeft}>
-          <Ionicons name="moon-outline" size={24} color="#0057C9" />
-          <Text style={[styles.optionText, { color: "#5692B7" }]}>Modo Escuro</Text>
-        </View>
-        <Switch
-          value={isDark}           // 🔹 valor do tema global
-          onValueChange={toggleTheme} // 🔹 inverte tema
-          thumbColor={isDark ? "#000" : "#fff"}
-          trackColor={{ false: "#ccc", true: "#80BFFF" }}
-        />
-      </View>
-
+      
       {/* Alterar senha */}
       <TouchableOpacity
         style={[styles.optionRow, { backgroundColor: "#000", borderColor }]}

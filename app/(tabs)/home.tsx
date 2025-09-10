@@ -237,12 +237,12 @@ export default function Home() {
 
   return (
     <View style={styles.containerOuter}>
-      {/* Botão "Fit" no canto superior direito */}
-      <TouchableOpacity
+      {/* Botão "Fit" agora no canto inferior direito, acima da tab bar */}
+     <TouchableOpacity
         style={{
           position: "absolute",
-          top: 60,
-          right: 20,
+          bottom: 10, // altura acima da tab bar
+          left: 10,   // ← mudado (antes era right: 20)
           backgroundColor: "#000",
           borderRadius: 20,
           borderWidth: 1,

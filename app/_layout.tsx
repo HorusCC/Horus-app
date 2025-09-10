@@ -20,11 +20,19 @@ function MainLayout() {
 
   return (
     <>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      {/* StatusBar coerente com o tema e fundo preto no Android */}
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor="#000" />
       <Stack
         screenOptions={{
-          headerRight: () => <ThemeToggleButton />,
+          // remove a “tarja” mantendo só o botão de tema flutuando
+          headerTransparent: true,
+          headerStyle: { backgroundColor: "transparent" },
+          headerShadowVisible: false,
           headerTitle: "",
+          headerRight: () => <ThemeToggleButton />,
+
+          // garante que o fundo atrás de tudo é preto no modo dark
+          contentStyle: { backgroundColor: isDark ? "#000" : "#fff" },
         }}
       />
     </>
