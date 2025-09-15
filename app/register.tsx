@@ -95,6 +95,8 @@ export default function CadastroPage() {
       objetivo: data.objetivo,
     });
 
+    console.log(setPageTwo);
+
     router.push("/login");
   }
 
