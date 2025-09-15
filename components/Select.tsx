@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Controller } from "react-hook-form";
 import { Feather } from "@expo/vector-icons";
-import Colors from "@/constants/Colors";
+import { useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface OptionsProps {
@@ -38,6 +38,9 @@ export function Select({
   placeholderTextColor,
   options,
 }: SelectProps) {
+  const [visible, setVisible] = useState(false);
+  const { colors, theme } = useTheme();
+
   return (
     <View style={styles.container}>
       <Controller
@@ -45,25 +48,42 @@ export function Select({
         name={name}
         render={({ field: { onChange, onBlur, value } }) => (
           <>
-            <TouchableOpacity style={styles.select}>
-              <Text>Selecione algo...</Text>
-              <Feather name="arrow-down" size={16} color={"#000"} />
+            <TouchableOpacity
+              style={[styles.select, { borderColor: colors.azulClaroPadrao }]}
+              onPress={() => setVisible(true)}
+            >
+              <Text style={[styles.text, { color: colors.text }]}>
+                {value
+                  ? options.find((option) => option.value === value)?.label
+                  : placeholder}
+              </Text>
+              <Feather name="arrow-down" size={16} color={colors.text} />
             </TouchableOpacity>
 
             <Modal
-              visible={true}
+              visible={visible}
               animationType="fade"
-              onRequestClose={() => {}}
+              onRequestClose={() => setVisible(false)}
               transparent={true}
             >
-              <TouchableOpacity style={styles.modalContainer} activeOpacity={1}>
+              <TouchableOpacity
+                style={styles.modalContainer}
+                activeOpacity={1}
+                onPress={() => setVisible(false)}
+              >
                 <TouchableOpacity style={styles.modalContent}>
                   <FlatList
                     contentContainerStyle={{ gap: 4 }}
                     data={options}
                     keyExtractor={(item) => item.value.toString()}
                     renderItem={({ item }) => (
-                      <TouchableOpacity style={styles.option}>
+                      <TouchableOpacity
+                        style={styles.option}
+                        onPress={() => {
+                          onChange(item.value);
+                          setVisible(false);
+                        }}
+                      >
                         <Text>{item.label}</Text>
                       </TouchableOpacity>
                     )}
@@ -98,6 +118,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#D3D3D3",
     color: "#A9A9A9",
   },
+  text: {
+    marginLeft: 2,
+  },
   icon: {
     position: "absolute",
     right: 12,
@@ -116,6 +139,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
     borderRadius: 5,
+    borderWidth: 2,
   },
   modalContainer: {
     backgroundColor: "rgba(0,0,0,0.5)",

@@ -62,6 +62,8 @@ export default function LoginPage() {
         type: "success",
         text1: "Login realizado com sucesso!",
       });
+
+      router.push("/(tabs)/home");
     } else {
       Toast.show({
         type: "error",

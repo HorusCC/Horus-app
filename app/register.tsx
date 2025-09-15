@@ -3,11 +3,19 @@ import { Input } from "@/components/Input";
 import { Select } from "@/components/Select";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+} from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useDataStore } from "../store/data";
 
 type FormData = z.infer<typeof schema>;
 
@@ -72,6 +80,24 @@ export default function CadastroPage() {
     { label: "Feminino", value: "feminino" },
   ];
 
+  const setPageTwo = useDataStore((state) => state.setPageTwo);
+
+  function handleCreate(data: FormData) {
+    setPageTwo({
+      nome: data.nome,
+      email: data.email,
+      senha: data.senha,
+      idade: data.idade,
+      altura: data.altura,
+      peso: data.peso,
+      sexo: data.sexo,
+      atividade: data.atividade,
+      objetivo: data.objetivo,
+    });
+
+    router.push("/login");
+  }
+
   useEffect(() => {
     const alturaM = parseFloat(altura) / 100;
     const pesoKg = parseFloat(peso);
@@ -129,7 +155,10 @@ export default function CadastroPage() {
       <Input
         name="nome"
         control={control}
-        style={[styles.input, { backgroundColor: colors.blackTransparent }]}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite seu nome:"
         value={nome}
         onChangeText={setNome}
@@ -138,7 +167,10 @@ export default function CadastroPage() {
       <Input
         name="email"
         control={control}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite seu email:"
         value={email}
         onChangeText={setEmail}
@@ -147,7 +179,10 @@ export default function CadastroPage() {
       <Input
         name="senha"
         control={control}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite sua senha:"
         value={senha}
         secureTextEntry
@@ -157,7 +192,10 @@ export default function CadastroPage() {
       <Input
         name="idade"
         control={control}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite sua idade:"
         value={idade}
         keyboardType="numeric"
@@ -167,7 +205,10 @@ export default function CadastroPage() {
       <Input
         name="altura"
         control={control}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite sua altura: (cm)"
         value={altura}
         keyboardType="numeric"
@@ -177,7 +218,10 @@ export default function CadastroPage() {
       <Input
         name="peso"
         control={control}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
         placeholder="Digite seu peso: (kg)"
         value={peso}
         keyboardType="numeric"
@@ -239,11 +283,14 @@ export default function CadastroPage() {
         </View>
       )}
 
-      <Button
-        title="Cadastrar"
-        onPress={() => router.push("/(tabs)/home")}
-        style={styles.button}
-      />
+      <Pressable
+        style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+        onPress={handleSubmit(handleCreate)}
+      >
+        <Text style={[styles.button, { color: colors.textButton }]}>
+          Registrar-se
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -274,7 +321,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    marginVertical: 20,
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+    borderRadius: 10,
   },
   resultContainer: {
     marginTop: 20,
