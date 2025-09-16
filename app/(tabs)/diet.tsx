@@ -8,12 +8,67 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useDataStore } from "@/store/data";
 import { api } from "../../services/api";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useQuery } from "@tanstack/react-query";
+import { Data } from "../../types/data";
+import { Link } from "expo-router";
+
+interface ResponseData {
+  data: Data;
+}
 
 export default function GenerateDiet() {
   const user = useDataStore((state) => state.user);
+  const { colors, theme } = useTheme();
+
+  const { data, isFetching, error } = useQuery({
+    queryKey: ["diet"],
+    queryFn: async () => {
+      try {
+        if (!user) {
+          throw new Error("Filed load nutrition");
+        }
+
+        const response = await api.post<ResponseData>("/create", {
+          name: user.nome,
+          email: user.email,
+          password: user.senha,
+          age: user.idade,
+          weight: user.peso,
+          height: user.altura,
+          gender: user.sexo,
+          level: user.atividade,
+          objective: user.objetivo,
+        });
+
+        return response.data.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+  });
+
+  // if (isFetching) {
+  //   return (
+  //     <View style={styles.loading}>
+  //       <Text style={styles.loadingText}>Estamos gerando sua dieta!</Text>
+  //     </View>
+  //   );
+  // }
+
+  if (error) {
+    return (
+      <View style={styles.loading}>
+        <Text style={styles.loadingText}>Falha ao gerar Dieta</Text>
+        <Link href={"/diet"}>
+          <Text style={styles.loading}>Tente novamente</Text>
+        </Link>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -28,12 +83,58 @@ export default function GenerateDiet() {
         <Ionicons name="restaurant-outline" size={24} color="#fff" />
         <Text style={styles.generateButtonText}>Gerar Dieta</Text>
       </TouchableOpacity>
+
+      <ScrollView style={{ paddingHorizontal: 16 }}>
+        {data && Object.keys(data).length > 0 && (
+          <>
+            <Text style={[styles.name, { color: colors.text }]}>
+              Nome: {data.nome}
+            </Text>
+            <Text style={[styles.objective, { color: colors.text }]}>
+              Foco: {data.objetivo}
+            </Text>
+
+            <Text style={[styles.label, { color: colors.text }]}>
+              Refeições:
+            </Text>
+            <ScrollView style={[{ backgroundColor: colors.tabIconDefault }]}>
+              <View style={styles.foods}>
+                {data.refeicoes.map((refeicao) => (
+                  <View style={styles.food} key={refeicao.nome}>
+                    <View style={styles.foodHeader}>
+                      <Text
+                        style={[styles.foodContent, { color: colors.text }]}
+                      >
+                        {refeicao.nome}
+                      </Text>
+                      <Ionicons
+                        name="restaurant"
+                        size={22}
+                        color={colors.text}
+                      />
+                    </View>
+                    <View style={styles.foodContent}>
+                      <Feather name="clock" size={20} color={colors.text} />
+                      <Text
+                        style={[styles.foodContent, { color: colors.text }]}
+                      >
+                        {refeicao.horario}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          </>
+        )}
+        <Text></Text>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000", paddingTop: 60 },
+  container: { flex: 1, backgroundColor: "#000", paddingTop: 50 },
   logo: {
     width: 60,
     height: 60,
@@ -83,4 +184,42 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   mealItems: { color: "#fff", fontSize: 14 },
+  loading: {
+    flex: 1,
+    backgroundColor: "#f97f",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "white",
+    marginBottom: 4,
+    justifyContent: "center",
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  objective: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  foods: {
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    gap: 8,
+  },
+  food: {
+    padding: 4,
+    borderRadius: 4,
+  },
+  foodHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    flexDirection: "row",
+    alignItems: "center",
+  },
 });

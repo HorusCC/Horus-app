@@ -33,10 +33,6 @@ type FormData = z.infer<typeof schema>;
 export default function LoginPage() {
   const [isSelected, setSelection] = useState(false);
   const { colors, theme } = useTheme();
-  const users = [
-    { email: "lorenzo@email.com", password: "123456" },
-    { email: "admin@email.com", password: "admin123" },
-  ];
 
   const {
     control,
@@ -46,24 +42,29 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   });
 
+  const user = useDataStore((s) => s.user);
   const setPageOne = useDataStore((state) => state.setPageOne);
 
   function handleCreate(data: FormData) {
-    const userExists = users.some(
-      (user) => user.email === data.email && user.password === data.password
-    );
+    const email = data.email.trim().toLowerCase();
+    const password = data.password;
 
-    if (userExists) {
-      setPageOne({
-        email: data.email,
-        senha: data.password,
-      });
+    if (!user.email || !user.senha) {
       Toast.show({
-        type: "success",
-        text1: "Login realizado com sucesso!",
+        type: "error",
+        text1: "Nenhum usuário cadastrado",
+        text2: "Faça seu cadastro antes de entrar",
       });
+      return;
+    }
 
-      router.push("/(tabs)/home");
+    const isValid =
+      user.email.trim().toLowerCase() === email && user.senha === password;
+
+    if (isValid) {
+      setPageOne({ email, senha: password });
+      Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
+      router.replace("/(tabs)/home");
     } else {
       Toast.show({
         type: "error",
