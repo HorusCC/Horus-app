@@ -30,15 +30,30 @@ const schema = z.object({
     .string()
     .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
     .max(100),
-  idade: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Idade deve ser um número positivo",
-  }),
-  altura: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Altura deve ser um número positivo",
-  }),
-  peso: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Peso deve ser um número positivo",
-  }),
+  idade: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
+      {
+        message: "Idade deve ser um número positivo",
+      }
+    ),
+  altura: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
+      {
+        message: "Altura deve ser um número positivo",
+      }
+    ),
+  peso: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
+      {
+        message: "Peso deve ser um número positivo",
+      }
+    ),
   sexo: z.string().refine((v) => sexoValues.includes(v as any), {
     message: "Selecione o sexo",
   }),

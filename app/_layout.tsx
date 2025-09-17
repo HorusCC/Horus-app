@@ -4,14 +4,19 @@ import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import { StatusBar } from "expo-status-bar";
 import { MacroProvider } from "./contexts/MacroContext";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 export default function RootLayout() {
+  const queryClient = new QueryClient();
+
   return (
-    <ThemeProvider>
-      <MacroProvider>
-        <MainLayout />
-      </MacroProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <MacroProvider>
+          <MainLayout />
+        </MacroProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
