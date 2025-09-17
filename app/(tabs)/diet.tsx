@@ -147,6 +147,14 @@ export default function GenerateDiet() {
                 ))}
               </View>
             </ScrollView>
+            <View>
+              <Text style={styles.foods}>Suplementos: </Text>
+              {data.suplementos.map((suplementos) => (
+                <View style={styles.food}>
+                  <Text>{suplementos}</Text>
+                </View>
+              ))}
+            </View>
           </>
         )}
         <Text></Text>

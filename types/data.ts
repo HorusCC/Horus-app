@@ -13,4 +13,5 @@ export interface Data {
   sexo: string;
   objetivo: number;
   refeicoes: RefeicoesProps[];
+  suplementos: string[];
 }
