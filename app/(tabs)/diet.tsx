@@ -29,7 +29,7 @@ export default function GenerateDiet() {
     queryFn: async () => {
       try {
         if (!user) {
-          throw new Error("Filed load nutrition");
+          throw new Error("Filed load diet");
         }
 
         const response = await api.post<ResponseData>("/create", {
@@ -51,38 +51,36 @@ export default function GenerateDiet() {
     },
   });
 
-  // if (isFetching) {
-  //   return (
-  //     <View style={styles.loading}>
-  //       <Text style={styles.loadingText}>Estamos gerando sua dieta!</Text>
-  //     </View>
-  //   );
-  // }
+  if (isFetching) {
+    return (
+      <View style={styles.loading}>
+        <Text style={styles.loadingText}>Estamos gerando sua dieta!</Text>
+      </View>
+    );
+  }
 
   if (error) {
     return (
       <View style={styles.loading}>
         <Text style={styles.loadingText}>Falha ao gerar Dieta</Text>
-        <Link href={"/diet"}>
+        <Link href={"/home"}>
           <Text style={styles.loading}>Tente novamente</Text>
         </Link>
+        <Text>
+          <Ionicons name="close" size={60} color={"red"} />
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Image
         source={require("../../assets/images/horusNew.png")}
         style={styles.logo}
         accessibilityLabel="Horus Nutrition logo"
       />
       <Text style={styles.title}>Dieta</Text>
-
-      <TouchableOpacity style={styles.generateButton}>
-        <Ionicons name="restaurant-outline" size={24} color="#fff" />
-        <Text style={styles.generateButtonText}>Gerar Dieta</Text>
-      </TouchableOpacity>
 
       <ScrollView style={{ paddingHorizontal: 16 }}>
         {data && Object.keys(data).length > 0 && (
@@ -97,13 +95,26 @@ export default function GenerateDiet() {
             <Text style={[styles.label, { color: colors.text }]}>
               Refeições:
             </Text>
-            <ScrollView style={[{ backgroundColor: colors.tabIconDefault }]}>
+            <ScrollView
+              style={[styles.foods, { backgroundColor: colors.backgroundDiet }]}
+            >
               <View style={styles.foods}>
                 {data.refeicoes.map((refeicao) => (
-                  <View style={styles.food} key={refeicao.nome}>
+                  <View
+                    style={[
+                      styles.food,
+                      {
+                        backgroundColor: colors.cardItemDiet,
+                      },
+                    ]}
+                    key={refeicao.nome}
+                  >
                     <View style={styles.foodHeader}>
                       <Text
-                        style={[styles.foodContent, { color: colors.text }]}
+                        style={[
+                          styles.foodContent,
+                          { color: colors.text, fontWeight: "bold" },
+                        ]}
                       >
                         {refeicao.nome}
                       </Text>
@@ -118,9 +129,20 @@ export default function GenerateDiet() {
                       <Text
                         style={[styles.foodContent, { color: colors.text }]}
                       >
-                        {refeicao.horario}
+                        Horário: {refeicao.horario}
                       </Text>
                     </View>
+                    <Text style={[styles.foodText, { color: colors.text }]}>
+                      Alimentos:
+                    </Text>
+                    {refeicao.alimentos.map((alimento) => (
+                      <Text
+                        key={alimento}
+                        style={[styles.foodTextItem, { color: colors.text }]}
+                      >
+                        • {alimento}
+                      </Text>
+                    ))}
                   </View>
                 ))}
               </View>
@@ -183,16 +205,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 6,
   },
-  mealItems: { color: "#fff", fontSize: 14 },
+  mealItems: {
+    color: "#fff",
+    fontSize: 14,
+  },
   loading: {
     flex: 1,
-    backgroundColor: "#f97f",
+    backgroundColor: "rgba(180, 180, 180, 1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingText: {
-    fontSize: 18,
+    fontSize: 24,
     color: "white",
     marginBottom: 4,
     justifyContent: "center",
+    fontWeight: "bold",
   },
   name: {
     fontSize: 18,
@@ -205,21 +233,36 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 22,
     fontWeight: "bold",
+    marginBottom: 12,
   },
   foods: {
-    padding: 10,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
     borderRadius: 8,
-    marginTop: 8,
     gap: 8,
   },
   food: {
-    padding: 4,
-    borderRadius: 4,
+    borderRadius: 8,
+    padding: 8,
   },
   foodHeader: {
     display: "flex",
     justifyContent: "space-between",
     flexDirection: "row",
     alignItems: "center",
+  },
+  foodContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  foodText: {
+    fontSize: 16,
+    marginBottom: 4,
+    marginTop: 10,
+    fontWeight: "bold",
+  },
+  foodTextItem: {
+    marginLeft: 4,
   },
 });
