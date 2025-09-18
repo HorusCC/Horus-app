@@ -16,6 +16,7 @@ export default {
     azulClaroPadrao: "#5692B7",
     blackTransparent: "#ffffff",
     cardItemDiet: "#5692B7",
+    backgroundSuplements: "#70fc2fff",
   },
   dark: {
     text: "#fff",
@@ -31,5 +32,6 @@ export default {
     azulClaroPadrao: "#5692B7",
     blackTransparent: "#000",
     cardItemDiet: "#5692B7",
+    backgroundSuplements: "#006d1bff",
   },
 };

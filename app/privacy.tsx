@@ -9,12 +9,15 @@ export default function PrivacyScreen() {
   const [locationPermission, setLocationPermission] = React.useState(false);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingVertical: 30 }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingVertical: 30 }}
+    >
       <Text style={styles.header}>Privacidade e Permissões</Text>
 
       {/* Compartilhar dados */}
       <View style={styles.card}>
-        <Text style={styles.label}>Compartilhar meus dados anonimamente</Text>
+        <Text style={styles.label}>Permitir Bluetooth</Text>
         <Switch
           value={shareData}
           onValueChange={setShareData}
@@ -25,22 +28,11 @@ export default function PrivacyScreen() {
 
       {/* Notificações */}
       <View style={styles.card}>
-        <Text style={styles.label}>Receber notificações personalizadas</Text>
+        <Text style={styles.label}>Receber notificações</Text>
         <Switch
           value={notifications}
           onValueChange={setNotifications}
           thumbColor={notifications ? "#0057C9" : "#ccc"}
-          trackColor={{ false: "#767577", true: "#80BFFF" }}
-        />
-      </View>
-
-      {/* Permissão da câmera */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Permissão de câmera</Text>
-        <Switch
-          value={cameraPermission}
-          onValueChange={setCameraPermission}
-          thumbColor={cameraPermission ? "#0057C9" : "#ccc"}
           trackColor={{ false: "#767577", true: "#80BFFF" }}
         />
       </View>
@@ -60,8 +52,9 @@ export default function PrivacyScreen() {
       <View style={styles.card}>
         <Text style={styles.label}>Política de Privacidade</Text>
         <Text style={styles.text}>
-          Sua privacidade é importante para nós. Todos os dados coletados são usados
-          apenas para melhorar sua experiência no Horus e nunca serão vendidos a terceiros.
+          Sua privacidade é importante para nós. Todos os dados coletados são
+          usados apenas para melhorar sua experiência no Horus e nunca serão
+          vendidos a terceiros.
         </Text>
       </View>
 
@@ -69,8 +62,8 @@ export default function PrivacyScreen() {
       <View style={styles.card}>
         <Text style={styles.label}>Termos de Uso</Text>
         <Text style={styles.text}>
-          Ao usar o Horus, você concorda com nossos termos de uso, que descrevem direitos,
-          responsabilidades e limitações do serviço.
+          Ao usar o Horus, você concorda com nossos termos de uso, que descrevem
+          direitos, responsabilidades e limitações do serviço.
         </Text>
       </View>
     </ScrollView>

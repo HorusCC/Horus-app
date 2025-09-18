@@ -147,11 +147,25 @@ export default function GenerateDiet() {
                 ))}
               </View>
             </ScrollView>
-            <View>
-              <Text style={styles.foods}>Suplementos: </Text>
+            <View
+              style={[
+                styles.foodsSuplement,
+                { backgroundColor: colors.backgroundSuplements },
+              ]}
+            >
+              <Text style={[styles.titleSuplement, { color: colors.text }]}>
+                Suplementos:{" "}
+              </Text>
               {data.suplementos.map((suplementos) => (
-                <View style={styles.food}>
-                  <Text>{suplementos}</Text>
+                <View key={suplementos}>
+                  <Text
+                    style={[
+                      styles.foodSuplementItems,
+                      { color: colors.text, paddingHorizontal: 2 },
+                    ]}
+                  >
+                    •{suplementos};
+                  </Text>
                 </View>
               ))}
             </View>
@@ -272,5 +286,21 @@ const styles = StyleSheet.create({
   },
   foodTextItem: {
     marginLeft: 4,
+  },
+  foodsSuplement: {
+    marginTop: 5,
+    borderRadius: 8,
+    padding: 6,
+    borderColor: "#008f0cff",
+    borderWidth: 2,
+  },
+  titleSuplement: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  foodSuplementItems: {
+    fontSize: 16,
+    paddingHorizontal: 4,
   },
 });

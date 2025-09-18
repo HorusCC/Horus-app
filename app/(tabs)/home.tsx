@@ -241,8 +241,8 @@ export default function Home() {
       <TouchableOpacity
         style={{
           position: "absolute",
-          top: 60,
-          right: 20,
+          top: 100,
+          right: 15,
           backgroundColor: "#000",
           borderRadius: 20,
           borderWidth: 1,
