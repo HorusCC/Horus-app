@@ -21,7 +21,7 @@ export default function SearchConsultOnly() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // debounce simples
+  // debounce
   const [debounced, setDebounced] = useState(query);
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query.trim()), 400);
@@ -68,12 +68,7 @@ export default function SearchConsultOnly() {
   };
 
   const renderItem = ({ item }: { item: FoodItem }) => {
-    const n = item.nutrientsPer100g;
-    const kcal =
-      n.kcal ??
-      Math.round(
-        (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
-      );
+    const d = deriveDisplayNutrients(item);
     return (
       <View style={styles.card}>
         {item.imageUrl ? (
@@ -86,11 +81,12 @@ export default function SearchConsultOnly() {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{item.name}</Text>
           {!!item.brand && <Text style={styles.brand}>{item.brand}</Text>}
+          <Text style={styles.basisText}>{d.basis}</Text>
           <View style={styles.macrosRow}>
-            <Pill label="Carb/100g" value={n.carbs_g ?? 0} unit="g" />
-            <Pill label="Prot/100g" value={n.protein_g ?? 0} unit="g" />
-            <Pill label="Gord/100g" value={n.fat_g ?? 0} unit="g" />
-            <Pill label="KCal/100g" value={kcal} unit="kcal" />
+            <Pill label="Carb" value={round1(d.carbs)} unit="g" />
+            <Pill label="Prot" value={round1(d.prot)} unit="g" />
+            <Pill label="Gord" value={round1(d.fat)} unit="g" />
+            <Pill label="KCal" value={d.kcal} unit="kcal" />
           </View>
         </View>
       </View>
@@ -155,6 +151,59 @@ export default function SearchConsultOnly() {
   );
 }
 
+function deriveDisplayNutrients(item: FoodItem) {
+  if (item.nutrientsPerServing) {
+    const n = item.nutrientsPerServing;
+    const kcal =
+      n.kcal ??
+      Math.round(
+        (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+      );
+    return {
+      basis: `por porção${
+        item.serving?.sizeText ? ` (${item.serving.sizeText})` : ""
+      }`,
+      carbs: n.carbs_g ?? 0,
+      prot: n.protein_g ?? 0,
+      fat: n.fat_g ?? 0,
+      kcal,
+    };
+  }
+
+  if (item.serving?.grams && item.nutrientsPer100g) {
+    const factor = item.serving.grams / 100;
+    const n = item.nutrientsPer100g;
+    const carbs = (n.carbs_g ?? 0) * factor;
+    const prot = (n.protein_g ?? 0) * factor;
+    const fat = (n.fat_g ?? 0) * factor;
+    const kcal =
+      n.kcal != null
+        ? Math.round(n.kcal * factor)
+        : Math.round(carbs * 4 + prot * 4 + fat * 9);
+    return {
+      basis: `por porção (${item.serving.sizeText})`,
+      carbs,
+      prot,
+      fat,
+      kcal,
+    };
+  }
+
+  const n = item.nutrientsPer100g ?? {};
+  const kcal =
+    n.kcal ??
+    Math.round(
+      (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+    );
+  return {
+    basis: "por 100 g",
+    carbs: n.carbs_g ?? 0,
+    prot: n.protein_g ?? 0,
+    fat: n.fat_g ?? 0,
+    kcal,
+  };
+}
+
 function Pill({
   label,
   value,
@@ -171,6 +220,10 @@ function Pill({
       </Text>
     </View>
   );
+}
+
+function round1(n: number) {
+  return Math.round(n * 10) / 10;
 }
 
 const styles = StyleSheet.create({
@@ -223,6 +276,7 @@ const styles = StyleSheet.create({
   },
   title: { color: "#fff", fontWeight: "700" },
   brand: { color: "#8ba7c4", fontSize: 12, marginTop: 2 },
+  basisText: { color: "#8ba7c4", fontSize: 12, marginTop: 4 },
   macrosRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
   pill: {
     backgroundColor: "#F1F5F9",

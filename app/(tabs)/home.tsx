@@ -1,4 +1,4 @@
-// app/(tabs)/home.tsx  (ou Nutrition.tsx)
+// app/(tabs)/home.tsx
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
@@ -18,8 +18,8 @@ import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMacros } from "../contexts/MacroContext";
 import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
-import { macrosForServing, Macros } from "../../src/utils/nutrition";
-import { useRouter } from "expo-router"; // ← ADICIONADO apenas para o botão "Fit"
+import { macrosForServing, Macros, round1 } from "../../src/utils/nutrition";
+import { useRouter } from "expo-router";
 
 type MealItem = { id: string; label: string; grams: number; macros: Macros };
 type Meal = { id: string; name: string; items: MealItem[] };
@@ -45,8 +45,8 @@ const Donut = ({
   totalMacros?: number;
   isCalorie?: boolean;
 }) => {
-  const radius = 50;
-  const strokeWidth = 14;
+  const radius = 50,
+    strokeWidth = 14;
   const total = isCalorie ? 1 : totalMacros || 1;
   const pct = isCalorie ? 100 : (value / total) * 100;
   const circumference = 2 * Math.PI * radius;
@@ -176,12 +176,11 @@ export default function Home() {
     const g = Number(grams);
     if (!Number.isFinite(g) || g <= 0)
       return Alert.alert("Informe gramas válidos");
+
     const portion = macrosForServing(selected.nutrientsPer100g, g);
 
-    // soma nos totais globais (seu MacroContext)
     addMacros(portion.carbs_g, portion.protein_g, portion.fat_g);
 
-    // guarda no estado da refeição para exibir e permitir remover corretamente
     const entry: MealItem = {
       id: Math.random().toString(36).slice(2),
       label: selected.name,
@@ -208,14 +207,12 @@ export default function Home() {
       ms.map((m) => {
         if (m.id !== mealId) return m;
         const toRemove = m.items.find((i) => i.id === itemId);
-        if (toRemove) {
-          // desconta dos totais
+        if (toRemove)
           addMacros(
             -toRemove.macros.carbs_g,
             -toRemove.macros.protein_g,
             -toRemove.macros.fat_g
           );
-        }
         return { ...m, items: m.items.filter((i) => i.id !== itemId) };
       })
     );
@@ -229,15 +226,74 @@ export default function Home() {
       label: "Calorias",
       value: carb * 4 + protein * 4 + fat * 9,
       color: "#4BC0C0",
-      isCalorie: true,
+      isCalorie: true as const,
     },
   ];
 
-  const router = useRouter(); // ← usado apenas pelo botão "Fit"
+  const router = useRouter();
+
+  // ---------- helpers de exibição por porção (igual à tela de search) ----------
+  function deriveDisplayNutrients(item: FoodItem) {
+    if (item.nutrientsPerServing) {
+      const n = item.nutrientsPerServing;
+      const kcal =
+        n.kcal ??
+        Math.round(
+          (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+        );
+      return {
+        basis: `por porção${
+          item.serving?.sizeText ? ` (${item.serving.sizeText})` : ""
+        }`,
+        carbs: n.carbs_g ?? 0,
+        prot: n.protein_g ?? 0,
+        fat: n.fat_g ?? 0,
+        kcal,
+      };
+    }
+    if (item.serving?.grams && item.nutrientsPer100g) {
+      const f = item.serving.grams / 100;
+      const n = item.nutrientsPer100g;
+      const carbs = (n.carbs_g ?? 0) * f;
+      const prot = (n.protein_g ?? 0) * f;
+      const fat = (n.fat_g ?? 0) * f;
+      const kcal =
+        n.kcal != null
+          ? Math.round(n.kcal * f)
+          : Math.round(carbs * 4 + prot * 4 + fat * 9);
+      return {
+        basis: `por porção (${item.serving.sizeText})`,
+        carbs,
+        prot,
+        fat,
+        kcal,
+      };
+    }
+    const n = item.nutrientsPer100g ?? {};
+    const kcal =
+      n.kcal ??
+      Math.round(
+        (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+      );
+    return {
+      basis: "por 100 g",
+      carbs: n.carbs_g ?? 0,
+      prot: n.protein_g ?? 0,
+      fat: n.fat_g ?? 0,
+      kcal,
+    };
+  }
+
+  // quando escolher um item, já preenche gramas com a porção (se souber)
+  function handleSelectItem(item: FoodItem) {
+    setSelected(item);
+    if (item.serving?.grams) setGrams(String(Math.round(item.serving.grams)));
+    else setGrams("100");
+  }
 
   return (
     <View style={styles.containerOuter}>
-      {/* Botão "Fit" no canto superior direito */}
+      {/* Botão "Fit" */}
       <TouchableOpacity
         style={{
           position: "absolute",
@@ -268,7 +324,7 @@ export default function Home() {
                 color={d.color}
                 label={d.label}
                 totalMacros={totalMacros}
-                isCalorie={d.isCalorie as any}
+                isCalorie={(d as any).isCalorie}
               />
             ))}
           </View>
@@ -302,7 +358,6 @@ export default function Home() {
               >
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[
                   styles.addButton,
@@ -359,7 +414,7 @@ export default function Home() {
                   keyExtractor={(i) => i.id}
                   renderItem={({ item }) => (
                     <TouchableOpacity
-                      onPress={() => setSelected(item)}
+                      onPress={() => handleSelectItem(item)}
                       style={{
                         flexDirection: "row",
                         paddingVertical: 8,
@@ -418,11 +473,49 @@ export default function Home() {
                 <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>
                   {selected.name}
                 </Text>
-                <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
-                  Por 100g — Carb {selected.nutrientsPer100g.carbs_g ?? 0} g •
-                  Prot {selected.nutrientsPer100g.protein_g ?? 0} g • Gord{" "}
-                  {selected.nutrientsPer100g.fat_g ?? 0} g
-                </Text>
+
+                {/* Base do item: por porção se existir; senão 100 g */}
+                {(() => {
+                  const d = deriveDisplayNutrients(selected);
+                  return (
+                    <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
+                      {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
+                      kcal
+                    </Text>
+                  );
+                })()}
+
+                {/* Quick actions de porção quando soubermos a gramagem */}
+                {selected.serving?.grams ? (
+                  <View style={{ flexDirection: "row", marginTop: 8, gap: 8 }}>
+                    {[0.5, 1, 2].map((mult) => (
+                      <TouchableOpacity
+                        key={mult}
+                        onPress={() =>
+                          setGrams(
+                            String(Math.round(selected.serving!.grams! * mult))
+                          )
+                        }
+                        style={{
+                          borderWidth: 1,
+                          borderColor: "#0057C9",
+                          borderRadius: 999,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                        }}
+                      >
+                        <Text style={{ color: "#fff" }}>
+                          {mult === 0.5
+                            ? "½ porção"
+                            : mult === 1
+                            ? "1 porção"
+                            : "2 porções"}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : null}
 
                 <Text style={{ color: "#8ba7c4", marginTop: 10 }}>
                   Porção (g)
@@ -624,7 +717,6 @@ const styles = StyleSheet.create({
     borderColor: "#5692B7",
     borderWidth: 1,
   },
-
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
