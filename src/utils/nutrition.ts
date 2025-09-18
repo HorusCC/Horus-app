@@ -1,23 +1,29 @@
-export type Macros = { kcal: number; protein_g: number; fat_g: number; carbs_g: number };
+// src/utils/nutrition.ts
+import type { Nutrients } from "../services/openFoodFacts";
 
-export const round = (n: number, d = 1) => {
-  const p = Math.pow(10, d);
-  return Math.round(n * p) / p;
+export type Macros = {
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+  kcal: number;
 };
 
-// calcula macros para uma porção (g) a partir dos valores por 100g
-export function macrosForServing(
-  per100g: Partial<Macros>,
-  grams: number
-): Macros {
-  const f = grams / 100;
-  const carbs = Number(per100g.carbs_g ?? 0) * f;
-  const prot  = Number(per100g.protein_g ?? 0) * f;
-  const fat   = Number(per100g.fat_g ?? 0) * f;
+export function macrosForServing(per100g: Nutrients, grams: number): Macros {
+  const factor = grams / 100;
+  const carbs = (per100g.carbs_g ?? 0) * factor;
+  const prot  = (per100g.protein_g ?? 0) * factor;
+  const fat   = (per100g.fat_g ?? 0) * factor;
+  const kcal =
+    per100g.kcal != null
+      ? Math.round(per100g.kcal * factor)
+      : Math.round(carbs * 4 + prot * 4 + fat * 9);
+
   return {
-    carbs_g: round(carbs),
-    protein_g: round(prot),
-    fat_g: round(fat),
-    kcal: round(carbs * 4 + prot * 4 + fat * 9),
+    carbs_g: round1(carbs),
+    protein_g: round1(prot),
+    fat_g: round1(fat),
+    kcal
   };
 }
+
+export function round1(n: number) { return Math.round(n * 10) / 10; }
