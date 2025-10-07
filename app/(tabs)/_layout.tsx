@@ -3,7 +3,7 @@ import { Tabs } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeProvider } from "../contexts/ThemeContext";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
