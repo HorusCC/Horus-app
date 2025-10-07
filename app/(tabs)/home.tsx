@@ -23,9 +23,20 @@ const initialMeals: Meal[] = [
 ];
 
 const Donut = ({
-  value, color, label, totalMacros, isCalorie = false,
-}: { value: number; color: string; label: string; totalMacros?: number; isCalorie?: boolean; }) => {
-  const radius = 50, strokeWidth = 14;
+  value,
+  color,
+  label,
+  totalMacros,
+  isCalorie = false,
+}: {
+  value: number;
+  color: string;
+  label: string;
+  totalMacros?: number;
+  isCalorie?: boolean;
+}) => {
+  const radius = 50,
+    strokeWidth = 14;
   const total = isCalorie ? 1 : totalMacros || 1;
   const pct = isCalorie ? 100 : (value / total) * 100;
   const circumference = 2 * Math.PI * radius;
@@ -108,7 +119,8 @@ export default function Home() {
   const addSelectedToMeal = () => {
     if (!currentMeal || !selected) return;
     const g = Number(grams);
-    if (!Number.isFinite(g) || g <= 0) return Alert.alert("Informe gramas válidos");
+    if (!Number.isFinite(g) || g <= 0)
+      return Alert.alert("Informe gramas válidos");
 
     const portion = macrosForServing(selected.nutrientsPer100g, g);
 
@@ -132,18 +144,28 @@ export default function Home() {
     setMealsState(ms =>
       ms.map(m => {
         if (m.id !== mealId) return m;
-        const toRemove = m.items.find(i => i.id === itemId);
-        if (toRemove) addMacros(-toRemove.macros.carbs_g, -toRemove.macros.protein_g, -toRemove.macros.fat_g);
-        return { ...m, items: m.items.filter(i => i.id !== itemId) };
+        const toRemove = m.items.find((i) => i.id === itemId);
+        if (toRemove)
+          addMacros(
+            -toRemove.macros.carbs_g,
+            -toRemove.macros.protein_g,
+            -toRemove.macros.fat_g
+          );
+        return { ...m, items: m.items.filter((i) => i.id !== itemId) };
       })
     );
   };
 
   const data = [
-    { label: "Carboidrato", value: carb,    color: "#36A2EB" },
-    { label: "Proteína",    value: protein, color: "#FF6384" },
-    { label: "Gordura",     value: fat,     color: "#FFCE56" },
-    { label: "Calorias",    value: carb * 4 + protein * 4 + fat * 9, color: "#4BC0C0", isCalorie: true as const },
+    { label: "Carboidrato", value: carb, color: "#36A2EB" },
+    { label: "Proteína", value: protein, color: "#FF6384" },
+    { label: "Gordura", value: fat, color: "#FFCE56" },
+    {
+      label: "Calorias",
+      value: carb * 4 + protein * 4 + fat * 9,
+      color: "#4BC0C0",
+      isCalorie: true as const,
+    },
   ];
 
   const router = useRouter();
@@ -152,24 +174,52 @@ export default function Home() {
   function deriveDisplayNutrients(item: FoodItem) {
     if (item.nutrientsPerServing) {
       const n = item.nutrientsPerServing;
-      const kcal = n.kcal ?? Math.round(((n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9));
+      const kcal =
+        n.kcal ??
+        Math.round(
+          (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+        );
       return {
-        basis: `por porção${item.serving?.sizeText ? ` (${item.serving.sizeText})` : ""}`,
-        carbs: n.carbs_g ?? 0, prot: n.protein_g ?? 0, fat: n.fat_g ?? 0, kcal
+        basis: `por porção${
+          item.serving?.sizeText ? ` (${item.serving.sizeText})` : ""
+        }`,
+        carbs: n.carbs_g ?? 0,
+        prot: n.protein_g ?? 0,
+        fat: n.fat_g ?? 0,
+        kcal,
       };
     }
     if (item.serving?.grams && item.nutrientsPer100g) {
       const f = item.serving.grams / 100;
       const n = item.nutrientsPer100g;
       const carbs = (n.carbs_g ?? 0) * f;
-      const prot  = (n.protein_g ?? 0) * f;
-      const fat   = (n.fat_g ?? 0) * f;
-      const kcal  = n.kcal != null ? Math.round(n.kcal * f) : Math.round(carbs * 4 + prot * 4 + fat * 9);
-      return { basis: `por porção (${item.serving.sizeText})`, carbs, prot, fat, kcal };
+      const prot = (n.protein_g ?? 0) * f;
+      const fat = (n.fat_g ?? 0) * f;
+      const kcal =
+        n.kcal != null
+          ? Math.round(n.kcal * f)
+          : Math.round(carbs * 4 + prot * 4 + fat * 9);
+      return {
+        basis: `por porção (${item.serving.sizeText})`,
+        carbs,
+        prot,
+        fat,
+        kcal,
+      };
     }
     const n = item.nutrientsPer100g ?? {};
-    const kcal = n.kcal ?? Math.round(((n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9));
-    return { basis: "por 100 g", carbs: n.carbs_g ?? 0, prot: n.protein_g ?? 0, fat: n.fat_g ?? 0, kcal };
+    const kcal =
+      n.kcal ??
+      Math.round(
+        (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+      );
+    return {
+      basis: "por 100 g",
+      carbs: n.carbs_g ?? 0,
+      prot: n.protein_g ?? 0,
+      fat: n.fat_g ?? 0,
+      kcal,
+    };
   }
 
   // quando escolher um item, já preenche gramas com a porção (se souber)
@@ -183,7 +233,18 @@ export default function Home() {
     <View style={styles.containerOuter}>
       {/* Botão "Fit" */}
       <TouchableOpacity
-        style={{ position: "absolute", top: 100, right: 15, backgroundColor: "#000", borderRadius: 20, borderWidth: 1, borderColor: "#0057C9", paddingHorizontal: 12, paddingVertical: 6, zIndex: 10 }}
+        style={{
+          position: "absolute",
+          top: 100,
+          right: 15,
+          backgroundColor: "#000",
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "#0057C9",
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          zIndex: 10,
+        }}
         onPress={() => router.push("/fit")}
       >
         <Ionicons name="barbell-outline" size={22} color="#fff" />
@@ -195,7 +256,14 @@ export default function Home() {
         <View style={styles.donutsCardContainer}>
           <View style={styles.donutRow}>
             {data.map((d, i) => (
-              <Donut key={i} value={d.value} color={d.color} label={d.label} totalMacros={totalMacros} isCalorie={(d as any).isCalorie} />
+              <Donut
+                key={i}
+                value={d.value}
+                color={d.color}
+                label={d.label}
+                totalMacros={totalMacros}
+                isCalorie={(d as any).isCalorie}
+              />
             ))}
           </View>
         </View>
@@ -216,8 +284,14 @@ export default function Home() {
               <TouchableOpacity style={styles.addButton} onPress={() => openAddModal(meal)}>
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.addButton, { marginLeft: 8, backgroundColor: "#FF4C4C" }]}
-                onPress={() => openRemoveModal(meal)} disabled={!meal.items.length}>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  { marginLeft: 8, backgroundColor: "#FF4C4C" },
+                ]}
+                onPress={() => openRemoveModal(meal)}
+                disabled={!meal.items.length}
+              >
                 <Ionicons name="trash-outline" size={24} color="white" />
               </TouchableOpacity>
             </View>
@@ -255,7 +329,12 @@ export default function Home() {
                   renderItem={({ item }) => (
                     <TouchableOpacity
                       onPress={() => handleSelectItem(item)}
-                      style={{ flexDirection: "row", paddingVertical: 8, borderBottomColor: "#1f2a37", borderBottomWidth: 1 }}
+                      style={{
+                        flexDirection: "row",
+                        paddingVertical: 8,
+                        borderBottomColor: "#1f2a37",
+                        borderBottomWidth: 1,
+                      }}
                     >
                       {item.imageUrl ? (
                         <Image source={{ uri: item.imageUrl }} style={{ width: 40, height: 40, borderRadius: 6, marginRight: 8 }} />
@@ -279,7 +358,52 @@ export default function Home() {
             {/* Selecionado + porção */}
             {selected && (
               <View style={{ marginTop: 10 }}>
-                <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>{selected.name}</Text>
+                <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>
+                  {selected.name}
+                </Text>
+
+                {/* Base do item: por porção se existir; senão 100 g */}
+                {(() => {
+                  const d = deriveDisplayNutrients(selected);
+                  return (
+                    <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
+                      {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
+                      kcal
+                    </Text>
+                  );
+                })()}
+
+                {/* Quick actions de porção quando soubermos a gramagem */}
+                {selected.serving?.grams ? (
+                  <View style={{ flexDirection: "row", marginTop: 8, gap: 8 }}>
+                    {[0.5, 1, 2].map((mult) => (
+                      <TouchableOpacity
+                        key={mult}
+                        onPress={() =>
+                          setGrams(
+                            String(Math.round(selected.serving!.grams! * mult))
+                          )
+                        }
+                        style={{
+                          borderWidth: 1,
+                          borderColor: "#0057C9",
+                          borderRadius: 999,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                        }}
+                      >
+                        <Text style={{ color: "#fff" }}>
+                          {mult === 0.5
+                            ? "½ porção"
+                            : mult === 1
+                            ? "1 porção"
+                            : "2 porções"}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : null}
 
                 {/* Base do item: por porção se existir; senão 100 g */}
                 {(() => {
@@ -389,8 +513,36 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: "#0057C9", borderRadius: 30, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   logo: { width: 60, height: 60, resizeMode: "contain", position: "absolute", top: 40, left: 20 },
 
-  modalBackground: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center" },
-  modalContent: { width: "90%", backgroundColor: "#000", borderRadius: 12, padding: 16, borderColor: "#5692B7", borderWidth: 1 },
-  searchContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#0057C9", borderRadius: 10, paddingHorizontal: 10, backgroundColor: "#000" },
-  modalInput: { borderWidth: 1, borderColor: "#0057C9", borderRadius: 8, marginVertical: 8, padding: 8, backgroundColor: "#000", color: "#fff" },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: "#000",
+    borderRadius: 12,
+    padding: 16,
+    borderColor: "#5692B7",
+    borderWidth: 1,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    backgroundColor: "#000",
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    borderRadius: 8,
+    marginVertical: 8,
+    padding: 8,
+    backgroundColor: "#000",
+    color: "#fff",
+  },
 });

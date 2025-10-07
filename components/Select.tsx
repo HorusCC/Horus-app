@@ -1,99 +1,161 @@
-import { SelectProps } from "@/Interfaces/Select";
-import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { ActionSheetIOS, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Modal,
+  KeyboardTypeOptions,
+  FlatList,
+} from "react-native";
+import { Controller } from "react-hook-form";
+import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 
-export function Select({ label, options = [], selectedValue, onValueChange, error }: SelectProps) {
-    const showActionSheet = () => {
-        if (!options?.length) return;
+interface OptionsProps {
+  label: string;
+  value: string | number;
+}
+interface SelectProps {
+  name: string;
+  control: any;
+  placeholder?: string;
+  error?: string;
+  style?: object;
+  placeholderTextColor?: string;
+  options: OptionsProps[];
+}
 
-        ActionSheetIOS.showActionSheetWithOptions(
-            {
-                options: ["Cancelar", ...options.map((opt) => opt.label)],
-                cancelButtonIndex: 0,
-            },
-            (buttonIndex) => {
-                if (buttonIndex > 0) {
-                    onValueChange(options[buttonIndex - 1].value);
-                }
-            }
-        );
-    };
+export function Select({
+  name,
+  control,
+  placeholder,
+  error,
+  style,
+  placeholderTextColor,
+  options,
+}: SelectProps) {
+  const [visible, setVisible] = useState(false);
+  const { colors, theme } = useTheme();
 
-    return (
-        <View style={styles.container}>
-            {label && <Text style={styles.label}>{label}</Text>}
+  return (
+    <View style={styles.container}>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <>
+            <TouchableOpacity
+              style={[styles.select, { borderColor: colors.azulClaroPadrao }]}
+              onPress={() => setVisible(true)}
+            >
+              <Text style={[styles.text, { color: colors.text }]}>
+                {value
+                  ? options.find((option) => option.value === value)?.label
+                  : placeholder}
+              </Text>
+              <Feather name="arrow-down" size={16} color={colors.text} />
+            </TouchableOpacity>
 
-            {Platform.OS === "ios" ? (
-                <TouchableOpacity
-                    style={[styles.selectBox, error && styles.selectBoxError]}
-                    onPress={showActionSheet}
-                >
-                    <Text style={[styles.selectedText, !selectedValue && styles.placeholderText]}>
-                        {selectedValue
-                            ? options.find((opt) => opt.value === selectedValue)?.label
-                            : "Selecione uma opção"}
-                    </Text>
+            <Modal
+              visible={visible}
+              animationType="fade"
+              onRequestClose={() => setVisible(false)}
+              transparent={true}
+            >
+              <TouchableOpacity
+                style={styles.modalContainer}
+                activeOpacity={1}
+                onPress={() => setVisible(false)}
+              >
+                <TouchableOpacity style={styles.modalContent}>
+                  <FlatList
+                    contentContainerStyle={{ gap: 4 }}
+                    data={options}
+                    keyExtractor={(item) => item.value.toString()}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.option}
+                        onPress={() => {
+                          onChange(item.value);
+                          setVisible(false);
+                        }}
+                      >
+                        <Text>{item.label}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
                 </TouchableOpacity>
-            ) : (
-                <View style={[styles.selectBox, error && styles.selectBoxError]}>
-                    <Picker
-                        selectedValue={selectedValue}
-                        onValueChange={onValueChange}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Selecione uma opção" value="" enabled={false} />
-                        {options?.map((option) => (
-                            <Picker.Item
-                                key={option?.value || option?.label}
-                                label={option?.label}
-                                value={option?.value}
-                            />
-                        ))}
-                    </Picker>
-                </View>
-            )}
+              </TouchableOpacity>
+            </Modal>
+          </>
+        )}
+      />
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
-        </View>
-    );
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        width: "100%",
-        marginBottom: 16,
-    },
-    label: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginBottom: 4,
-    },
-    selectBox: {
-        width: "100%",
-        borderWidth: 1,
-        borderColor: "#E8E8E8",
-        backgroundColor: "#F6F6F6",
-        borderRadius: 8,
-        padding: Platform.OS === "ios" ? 12 : 0,
-        fontSize: 16,
-    },
-    selectBoxError: {
-        borderColor: "red",
-    },
-    selectedText: {
-        fontSize: 16,
-        color: "#333",
-    },
-    placeholderText: {
-        color: "#A9A9A9",
-    },
-    picker: {
-        width: "100%",
-    },
-    errorText: {
-        color: "red",
-        fontSize: 14,
-        marginTop: 4,
-    },
+  container: {
+    width: "100%",
+    marginBottom: 3,
+  },
+  label: {
+    marginBottom: 4,
+  },
+  inputContainer: {
+    position: "relative",
+  },
+  inputError: {
+    borderColor: "red",
+  },
+  inputDisabled: {
+    backgroundColor: "#D3D3D3",
+    color: "#A9A9A9",
+  },
+  text: {
+    marginLeft: 2,
+  },
+  icon: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    transform: [{ translateY: -12 }],
+  },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  select: {
+    flexDirection: "row",
+    height: 44,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+  },
+  modalContainer: {
+    backgroundColor: "rgba(0,0,0,0.5)",
+    flex: 1,
+    justifyContent: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    marginHorizontal: 10,
+    borderRadius: 8,
+    padding: 20,
+  },
+  option: {
+    paddingVertical: 14,
+    backgroundColor: "rgba(208,208,208,0.40)",
+    borderRadius: 4,
+    paddingHorizontal: 8,
+  },
 });

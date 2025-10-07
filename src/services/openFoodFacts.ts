@@ -19,7 +19,7 @@ export type FoodItem = {
   // por porção/unidade (quando disponível ou inferida)
   serving?: {
     sizeText?: string; // ex.: "1 unidade (50 g)" | "45 g" | "1 porção (30 g)"
-    grams?: number;    // número em g quando der pra inferir
+    grams?: number; // número em g quando der pra inferir
   };
   nutrientsPerServing?: Nutrients; // valores nativos por porção
 };
@@ -38,10 +38,10 @@ const FIELDS = [
   "serving_size",
   "serving_quantity",
   "number_of_servings",
-  "quantity",                 // string tipo "2 x 50 g" | "45 g"
-  "product_quantity",         // número (ex.: 180)
-  "product_quantity_unit",    // "g", "ml", etc.
-  "nutriments"
+  "quantity", // string tipo "2 x 50 g" | "45 g"
+  "product_quantity", // número (ex.: 180)
+  "product_quantity_unit", // "g", "ml", etc.
+  "nutriments",
 ].join(",");
 
 // ---------- helpers de parsing ----------
@@ -52,7 +52,7 @@ function toNumber(s?: string | number): number | undefined {
 }
 
 function pickFirst<T>(...vals: (T | undefined)[]): T | undefined {
-  return vals.find(v => v !== undefined);
+  return vals.find((v) => v !== undefined);
 }
 
 // extrai "NN g" do texto (primeira ocorrência)
@@ -64,7 +64,10 @@ function extractGrams(text?: string): number | undefined {
 }
 
 // lida com padrões "2 x 50 g", "6×27 g", "3x 30g"
-function extractUnitFromMultipack(quantity?: string): { perUnitG?: number; totalG?: number } {
+function extractUnitFromMultipack(quantity?: string): {
+  perUnitG?: number;
+  totalG?: number;
+} {
   if (!quantity) return {};
   // 2 x 50 g  |  6×27 g
   const multi = /(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*g\b/i.exec(quantity);
@@ -82,7 +85,10 @@ function extractUnitFromMultipack(quantity?: string): { perUnitG?: number; total
   return {};
 }
 
-function buildServing(sizeText?: string, grams?: number): FoodItem["serving"] | undefined {
+function buildServing(
+  sizeText?: string,
+  grams?: number
+): FoodItem["serving"] | undefined {
   if (!sizeText && grams == null) return undefined;
   return { sizeText, grams };
 }
@@ -95,7 +101,7 @@ function productToItem(p: any): FoodItem {
     carbs_g: n.carbohydrates_100g,
     protein_g: n.proteins_100g,
     fat_g: n.fat_100g,
-    kcal: n["energy-kcal_100g"] ?? n.energy_kcal_100g
+    kcal: n["energy-kcal_100g"] ?? n.energy_kcal_100g,
   };
 
   // 1) porção nativa (melhor cenário)
@@ -109,7 +115,7 @@ function productToItem(p: any): FoodItem {
           carbs_g: n.carbohydrates_serving,
           protein_g: n.proteins_serving,
           fat_g: n.fat_serving,
-          kcal: n["energy-kcal_serving"] ?? n.energy_kcal_serving
+          kcal: n["energy-kcal_serving"] ?? n.energy_kcal_serving,
         }
       : undefined;
 
@@ -119,7 +125,8 @@ function productToItem(p: any): FoodItem {
   //    b) quantity (ex.: "2 x 50 g", "45 g")
   //    c) product_quantity/number_of_servings
   //    d) (fallback fraco) grams no product_name
-  const servingSizeText: string | undefined = p.serving_size || p.serving_quantity || undefined;
+  const servingSizeText: string | undefined =
+    p.serving_size || p.serving_quantity || undefined;
 
   // a) direto do serving_size
   let gramsFromServing = extractGrams(servingSizeText);
@@ -138,10 +145,16 @@ function productToItem(p: any): FoodItem {
   }
 
   // d) do nome
-  const gramsFromName = extractGrams(p.product_name) ?? extractGrams(p.generic_name);
+  const gramsFromName =
+    extractGrams(p.product_name) ?? extractGrams(p.generic_name);
 
   // decidir a gramagem final
-  const grams = pickFirst(gramsFromServing, gramsFromQuantity, gramsFromPQ, gramsFromName);
+  const grams = pickFirst(
+    gramsFromServing,
+    gramsFromQuantity,
+    gramsFromPQ,
+    gramsFromName
+  );
 
   // montar sizeText amigável
   let sizeText: string | undefined = servingSizeText;
@@ -159,7 +172,7 @@ function productToItem(p: any): FoodItem {
     imageUrl: p.image_front_small_url || p.image_url || undefined,
     nutrientsPer100g: per100g,
     serving: buildServing(sizeText, grams),
-    nutrientsPerServing: perServing
+    nutrientsPerServing: perServing,
   };
 }
 

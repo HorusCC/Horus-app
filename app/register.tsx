@@ -3,7 +3,67 @@ import { Input } from "@/components/Input";
 import { Select } from "@/components/Select";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+} from "react-native";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useDataStore } from "../store/data";
+
+type FormData = z.infer<typeof schema>;
+
+const sexoValues = ["masculino", "feminino"] as const;
+const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
+const objetivoValues = ["emagrecimento", "manutencao", "ganho_massa"] as const;
+
+const schema = z.object({
+  nome: z.string().min(2, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  email: z.string().email({ message: "Email inválido" }),
+  senha: z
+    .string()
+    .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
+    .max(100),
+  idade: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
+      {
+        message: "Idade deve ser um número positivo",
+      }
+    ),
+  altura: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
+      {
+        message: "Altura deve ser um número positivo",
+      }
+    ),
+  peso: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
+      {
+        message: "Peso deve ser um número positivo",
+      }
+    ),
+  sexo: z.string().refine((v) => sexoValues.includes(v as any), {
+    message: "Selecione o sexo",
+  }),
+  atividade: z.string().refine((v) => atividadeValues.includes(v as any), {
+    message: "Selecione a atividade",
+  }),
+  objetivo: z.string().refine((v) => objetivoValues.includes(v as any), {
+    message: "Selecione o objetivo",
+  }),
+});
 
 export default function CadastroPage() {
   const [nome, setNome] = useState("");
@@ -14,7 +74,46 @@ export default function CadastroPage() {
   const [altura, setAltura] = useState("");
   const [peso, setPeso] = useState("");
   const [atividade, setAtividade] = useState("");
-  const [resultado, setResultado] = useState<{ imc: number, tmb: number, classificacao: string } | null>(null);
+  const [objetivo, setObjetivo] = useState("");
+  const [resultado, setResultado] = useState<{
+    imc: number;
+    tmb: number;
+    classificacao: string;
+  } | null>(null);
+  const { colors, theme } = useTheme();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
+
+  const genderOptions = [
+    { label: "Masculino", value: "masculino" },
+    { label: "Feminino", value: "feminino" },
+  ];
+
+  const setPageTwo = useDataStore((state) => state.setPageTwo);
+
+  function handleCreate(data: FormData) {
+    setPageTwo({
+      nome: data.nome,
+      email: data.email,
+      senha: data.senha,
+      idade: data.idade,
+      altura: data.altura,
+      peso: data.peso,
+      sexo: data.sexo,
+      atividade: data.atividade,
+      objetivo: data.objetivo,
+    });
+
+    console.log(setPageTwo);
+
+    router.push("/login");
+  }
 
   useEffect(() => {
     const alturaM = parseFloat(altura) / 100;
@@ -54,43 +153,112 @@ export default function CadastroPage() {
   }, [nome, email, senha, sexo, idade, altura, peso, atividade]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: colors.background },
+      ]}
+    >
       <Image
         style={styles.image}
         source={require("../assets/images/horusNew.png")}
       />
-      <Text style={styles.title}>Criar conta</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Criar conta</Text>
       <Text style={styles.subtitle}>
         Preencha os dados abaixo para continuar
       </Text>
-    
-      <Text style={styles.label}>Nome</Text>
-      <Input placeholder="Nome" value={nome} onChangeText={setNome} />
-      <Text style={styles.label}>Email</Text>
-      <Input placeholder="Email" value={email} onChangeText={setEmail} />
-      <Text style={styles.label}>Senha</Text>
-      <Input placeholder="Senha" value={senha} secureTextEntry onChangeText={setSenha} />
-      <Text style={styles.label}>Idade</Text>
-      <Input placeholder="Idade" value={idade} keyboardType="numeric" onChangeText={setIdade} />
-      <Text style={styles.label}>Altura</Text>
-      <Input placeholder="Altura (cm)" value={altura} keyboardType="numeric" onChangeText={setAltura} />
-      <Text style={styles.label}>Peso</Text>
-      <Input placeholder="Peso (kg)" value={peso} keyboardType="numeric" onChangeText={setPeso} />
 
-      <Text style={styles.label}>Sexo</Text>
-      <Select
-        selectedValue={sexo}
-        onValueChange={setSexo}
-        options={[
-          { label: "Masculino", value: "masculino" },
-          { label: "Feminino", value: "feminino" },
+      <Text style={[styles.label, { color: colors.textRegister }]}>Nome</Text>
+      <Input
+        name="nome"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
         ]}
+        placeholder="Digite seu nome:"
+        value={nome}
+        onChangeText={setNome}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
+      <Input
+        name="email"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite seu email:"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
+      <Input
+        name="senha"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua senha:"
+        value={senha}
+        secureTextEntry
+        onChangeText={setSenha}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
+      <Input
+        name="idade"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua idade:"
+        value={idade}
+        keyboardType="numeric"
+        onChangeText={setIdade}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
+      <Input
+        name="altura"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua altura: (cm)"
+        value={altura}
+        keyboardType="numeric"
+        onChangeText={setAltura}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
+      <Input
+        name="peso"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite seu peso: (kg)"
+        value={peso}
+        keyboardType="numeric"
+        onChangeText={setPeso}
       />
 
-      <Text style={styles.label}>Atividade Física</Text>
+      <Text style={[styles.label, { color: colors.textRegister }]}>Sexo</Text>
       <Select
-        selectedValue={atividade}
-        onValueChange={setAtividade}
+        name="sexo"
+        control={control}
+        options={genderOptions}
+        error={errors.sexo?.message}
+      />
+
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Atividade Física
+      </Text>
+      <Select
+        name="atividade"
+        control={control}
         options={[
           { label: "Sedentário", value: "sedentario" },
           { label: "Levemente ativo", value: "leve" },
@@ -99,11 +267,28 @@ export default function CadastroPage() {
         ]}
       />
 
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Objetivo
+      </Text>
+      <Select
+        name="objetivo"
+        control={control}
+        options={[
+          { label: "Emagrecimento", value: "emagrecimento" },
+          { label: "Manutenção", value: "manutencao" },
+          { label: "Ganho de massa muscular", value: "ganho_massa" },
+        ]}
+      />
+
       {resultado && (
         <View style={styles.resultContainer}>
           <Text style={styles.resultText}>IMC: {resultado.imc.toFixed(2)}</Text>
-          <Text style={styles.resultText}>TMB: {resultado.tmb.toFixed(2)} kcal/dia</Text>
-          <Text style={styles.resultText}>Classificação: {resultado.classificacao}</Text>
+          <Text style={styles.resultText}>
+            TMB: {resultado.tmb.toFixed(2)} kcal/dia
+          </Text>
+          <Text style={styles.resultText}>
+            Classificação: {resultado.classificacao}
+          </Text>
 
           <View style={styles.table}>
             <Text style={styles.tableTitle}>Classificação IMC</Text>
@@ -115,7 +300,14 @@ export default function CadastroPage() {
         </View>
       )}
 
-      <Button title="Cadastrar" onPress={() => router.push("/(tabs)/home")} style={styles.button} />
+      <Pressable
+        style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
+        onPress={handleSubmit(handleCreate)}
+      >
+        <Text style={[styles.button, { color: colors.textButton }]}>
+          Registrar-se
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -146,7 +338,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    marginVertical: 20,
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+    borderRadius: 10,
   },
   resultContainer: {
     marginTop: 20,
@@ -171,8 +368,18 @@ const styles = StyleSheet.create({
   tableText: {
     color: "#ccc",
   },
-label: {
-    marginBottom: 10, 
-    color: "#ffffffff",
+  label: {
+    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  input: {
+    width: "auto",
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#0652b4ff",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
 });
