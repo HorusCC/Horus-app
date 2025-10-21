@@ -412,9 +412,7 @@ export default function Home() {
               <Text style={styles.mealTitle}>{meal.name}</Text>
               {meal.items.length ? (
                 <Text style={styles.mealItems}>
-                  {meal.items
-                    .map((i) => `${i.label} (${i.grams}g)`)
-                    .join(", ")}
+                  {meal.items.map((i) => `${i.label} (${i.grams}g)`).join(", ")}
                 </Text>
               ) : (
                 <Text
@@ -543,7 +541,9 @@ export default function Home() {
                       </View>
                     </TouchableOpacity>
                   )}
-                  onEndReached={() => !loading && hasMore && setPage((p) => p + 1)}
+                  onEndReached={() =>
+                    !loading && hasMore && setPage((p) => p + 1)
+                  }
                   onEndReachedThreshold={0.4}
                 />
               )}
@@ -561,7 +561,8 @@ export default function Home() {
                   return (
                     <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
                       {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
-                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal} kcal
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
+                      kcal
                     </Text>
                   );
                 })()}
@@ -596,7 +597,9 @@ export default function Home() {
                   </View>
                 ) : null}
 
-                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>Porção (g)</Text>
+                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>
+                  Porção (g)
+                </Text>
                 <TextInput
                   value={grams}
                   onChangeText={(t) => setGrams(t.replace(/[^0-9]/g, ""))}
