@@ -1,5 +1,8 @@
 import axios from "axios";
 
+const BASE = "http://26.38.143.141:8080/ai";
+
 export const api = axios.create({
-  baseURL: "http://26.38.143.141:3333",
+  baseURL: BASE,
+  timeout: 40000,
 });
