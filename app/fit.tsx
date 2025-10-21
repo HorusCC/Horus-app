@@ -2,10 +2,19 @@
 import React, { useMemo, useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal,
-  TextInput, Button, Alert
+  TextInput, Button, RefreshControl
 } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
+
+/* ====================== URL/TOKEN via Expo extra ====================== */
+const { API_URL, API_TOKEN } = (Constants.expoConfig?.extra ?? {}) as {
+  API_URL?: string;
+  API_TOKEN?: string;
+};
+const SMARTWATCH_API_URL = API_URL || "http://localhost:3001";
+const SMARTWATCH_TOKEN = API_TOKEN || "dev-token-qualquer";
 
 /* ====================== UI: Donut ====================== */
 const Donut = ({
@@ -38,18 +47,14 @@ const Donut = ({
 };
 
 /* ====================== Tipos & Constantes ====================== */
-// Duas categorias: cardio (tempo) e musculação (tempo + repetições)
 export type ExerciseBase = { id: string; name: string; type: 'cardio' | 'strength' };
 export type CardioExercise = ExerciseBase & { type: 'cardio'; minutes: number };
 export type StrengthExercise = ExerciseBase & { type: 'strength'; sets: number; reps: number; minutes?: number };
 export type Exercise = CardioExercise | StrengthExercise;
 
-const SMARTWATCH_API_URL = 'https://YOUR_SMARTWATCH_API.example.com'; // << ajuste para sua API
-const SMARTWATCH_TOKEN = 'REPLACE_WITH_TOKEN'; // << injete via .env ou SecureStore
-
 /* ====================== Componente ====================== */
 export default function Fit() {
-  // 🔹 Seeds
+  // Seeds
   const [exercises, setExercises] = useState<Exercise[]>([
     { id: 'c1', name: 'Cardio', type: 'cardio', minutes: 30 },
     { id: 'm1', name: 'Musculação', type: 'strength', sets: 4, reps: 12, minutes: 40 },
@@ -59,31 +64,45 @@ export default function Fit() {
   const weeklyGoal = 5;
   const completed = useMemo(() => Math.min(weeklyGoal, Math.ceil(exercises.length / 2)), [exercises.length]);
   const cardioGoal = 60; // minutos/dia
-  const cardioDone = useMemo(() => exercises.filter(e => e.type === 'cardio').reduce((acc, e) => acc + e.minutes, 0), [exercises]);
+  const cardioDone = useMemo(
+    () => exercises.filter(e => e.type === 'cardio').reduce((acc, e) => acc + e.minutes, 0),
+    [exercises]
+  );
   const strengthGoal = 20; // séries
-  const strengthDone = useMemo(() => exercises.filter(e => e.type === 'strength').reduce((acc, e) => acc + e.sets, 0), [exercises]);
+  const strengthDone = useMemo(
+    () => exercises.filter(e => e.type === 'strength').reduce((acc, e) => acc + e.sets, 0),
+    [exercises]
+  );
 
-  // 🔹 Calorias vindas do Smartwatch (API)
+  // Calorias vindas do Smartwatch (API)
   const [caloriesBurned, setCaloriesBurned] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => { fetchCaloriesFromSmartwatch().catch(console.error); }, []);
 
-  async function fetchCaloriesFromSmartwatch() {
+  async function fetchCaloriesFromSmartwatch(retry = 1) {
     try {
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const res = await fetch(`${SMARTWATCH_API_URL}/metrics/daily?date=${today}`, {
+      const url = `${SMARTWATCH_API_URL}/metrics/daily?date=${today}`;
+      const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${SMARTWATCH_TOKEN}` }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      // ajuste ao seu payload real
-      // Exemplo esperado: { calories: number }
       setCaloriesBurned(Number(data.calories) || 0);
     } catch (e) {
       console.error('Erro ao buscar calorias do smartwatch:', e);
+      if (retry > 0) setTimeout(() => fetchCaloriesFromSmartwatch(retry - 1), 800);
     }
   }
 
-  // 🔹 Estado do modal (permite escolher categoria)
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchCaloriesFromSmartwatch(0);
+    setRefreshing(false);
+  };
+
+  // Estado do modal (adicionar exercício)
   const [modalVisible, setModalVisible] = useState(false);
   const [category, setCategory] = useState<'cardio' | 'strength'>('cardio');
   const [name, setName] = useState('Cardio');
@@ -116,14 +135,15 @@ export default function Fit() {
 
   const removeExercise = (id: string) => setExercises(prev => prev.filter(e => e.id !== id));
 
-  // Helpers de render
   const cardio = exercises.filter(e => e.type === 'cardio');
   const strength = exercises.filter(e => e.type === 'strength');
 
-  /* ====================== JSX ====================== */
   return (
     <View style={styles.containerOuter}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+      >
         <Text style={styles.title}>Fitness</Text>
 
         <View style={styles.donutsCardContainer}>
@@ -135,7 +155,7 @@ export default function Fit() {
           </View>
         </View>
 
-        {/* ===== Categoria 1: Cardio (tempo) ===== */}
+        {/* Cardio */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 20 }}>
           <Text style={styles.sectionTitle}>Cardio (minutos)</Text>
           <View style={{ flex: 1 }} />
@@ -161,7 +181,7 @@ export default function Fit() {
           )}
         </View>
 
-        {/* ===== Categoria 2: Musculação (tempo + repetições) ===== */}
+        {/* Musculação */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 26 }}>
           <Text style={styles.sectionTitle}>Musculação (séries x repetições)</Text>
           <View style={{ flex: 1 }} />
@@ -187,13 +207,12 @@ export default function Fit() {
           )}
         </View>
 
-        {/* Modal para adicionar exercício */}
+        {/* Modal */}
         <Modal transparent visible={modalVisible} animationType="fade" onRequestClose={() => setModalVisible(false)}>
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Novo exercício</Text>
 
-              {/* Toggle simples de categoria */}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 4 }}>
                 <TouchableOpacity onPress={() => setCategory('cardio')} style={[styles.catButton, category === 'cardio' && styles.catButtonActive]}>
                   <Text style={{ color: '#fff' }}>Cardio</Text>
@@ -211,7 +230,6 @@ export default function Fit() {
                 style={styles.modalInput}
               />
 
-              {/* Campos por categoria */}
               {category === 'cardio' ? (
                 <TextInput
                   placeholder="Minutos (ex: 30)"
