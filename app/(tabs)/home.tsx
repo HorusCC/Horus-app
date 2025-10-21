@@ -6,25 +6,43 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  FlatList,
-  Dimensions,
   TouchableOpacity,
   Modal,
   TextInput,
   Button,
+  FlatList,
+  ActivityIndicator,
   Alert,
 } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMacros } from "../contexts/MacroContext";
 import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
 import { macrosForServing, Macros, round1 } from "../../src/utils/nutrition";
 import { useRouter } from "expo-router";
 
-interface DonutData {
-  name: string;
+type MealItem = { id: string; label: string; grams: number; macros: Macros };
+type Meal = { id: string; name: string; items: MealItem[] };
+
+const initialMeals: Meal[] = [
+  { id: "1", name: "Café da Manhã", items: [] },
+  { id: "2", name: "Lanche da Manhã", items: [] },
+  { id: "3", name: "Almoço", items: [] },
+  { id: "4", name: "Café da Tarde", items: [] },
+  { id: "5", name: "Jantar", items: [] },
+];
+
+const Donut = ({
+  value,
+  color,
+  label,
+  totalMacros,
+  isCalorie = false,
+}: {
   value: number;
   color: string;
+  label: string;
+  totalMacros?: number;
   isCalorie?: boolean;
 }) => {
   const radius = 50,
@@ -32,7 +50,6 @@ interface DonutData {
   const total = isCalorie ? 1 : totalMacros || 1;
   const pct = isCalorie ? 100 : (value / total) * 100;
   const circumference = 2 * Math.PI * radius;
-
   return (
     <View style={styles.donutContainer}>
       <Svg
@@ -55,13 +72,11 @@ interface DonutData {
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            stroke={item.color}
+            stroke={color}
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeDasharray={`${circumference}`}
-            strokeDashoffset={
-              circumference - (circumference * percentage) / 100
-            }
+            strokeDashoffset={circumference - (circumference * pct) / 100}
             strokeLinecap="round"
           />
         </G>
@@ -70,32 +85,30 @@ interface DonutData {
           y={radius + strokeWidth + 5}
           fontSize="16"
           fontWeight="bold"
-          fill={item.color}
+          fill={color}
           textAnchor="middle"
         >
-          {Math.round(percentage)}%
+          {Math.round(pct)}%
         </SvgText>
       </Svg>
-
-      <Text style={[styles.donutLabel, { color: item.color }]}>
-        {Math.round(item.value)}
-        {item.isCalorie ? " Kcal" : " g"}
+      <Text style={[styles.donutLabel, { color }]}>
+        {Math.round(value)}
+        {isCalorie ? " Kcal" : " g"}
       </Text>
-      <Text style={styles.donutName}>{item.name}</Text>
+      <Text style={styles.donutName}>{label}</Text>
     </View>
   );
 };
 
-export default function Nutrition() {
+export default function Home() {
   const { carb, protein, fat, addMacros } = useMacros();
-
   const totalMacros = carb + protein + fat;
 
-  const [mealsState, setMealsState] = useState(initialMeals);
+  const [mealsState, setMealsState] = useState<Meal[]>(initialMeals);
+
+  // modal de adicionar
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentMeal, setCurrentMeal] = useState<any>(null);
-  const [foodName, setFoodName] = useState("");
-  const [foodGrams, setFoodGrams] = useState("");
+  const [currentMeal, setCurrentMeal] = useState<Meal | null>(null);
 
   // busca dentro do modal
   const [q, setQ] = useState("");
@@ -205,12 +218,12 @@ export default function Nutrition() {
     );
   };
 
-  const data: DonutData[] = [
-    { name: "Carboidrato", value: carb, color: "#36A2EB", totalMacros },
-    { name: "Proteína", value: protein, color: "#FF6384", totalMacros },
-    { name: "Gordura", value: fat, color: "#FFCE56", totalMacros },
+  const data = [
+    { label: "Carboidrato", value: carb, color: "#36A2EB" },
+    { label: "Proteína", value: protein, color: "#FF6384" },
+    { label: "Gordura", value: fat, color: "#FFCE56" },
     {
-      name: "Calorias",
+      label: "Calorias",
       value: carb * 4 + protein * 4 + fat * 9,
       color: "#4BC0C0",
       isCalorie: true as const,
@@ -322,8 +335,10 @@ export default function Nutrition() {
           <View key={meal.id} style={styles.mealCard}>
             <View style={{ flex: 1 }}>
               <Text style={styles.mealTitle}>{meal.name}</Text>
-              {meal.items ? (
-                <Text style={styles.mealItems}>{meal.items}</Text>
+              {meal.items.length ? (
+                <Text style={styles.mealItems}>
+                  {meal.items.map((i) => `${i.label} (${i.grams}g)`).join(", ")}
+                </Text>
               ) : (
                 <Text
                   style={[
@@ -339,7 +354,7 @@ export default function Nutrition() {
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => handleAddFood(meal)}
+                onPress={() => openAddModal(meal)}
               >
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
@@ -348,8 +363,8 @@ export default function Nutrition() {
                   styles.addButton,
                   { marginLeft: 8, backgroundColor: "#FF4C4C" },
                 ]}
-                onPress={() => openCustomModal(meal)}
-                disabled={!meal.items}
+                onPress={() => openRemoveModal(meal)}
+                disabled={!meal.items.length}
               >
                 <Ionicons name="trash-outline" size={24} color="white" />
               </TouchableOpacity>
@@ -358,12 +373,19 @@ export default function Nutrition() {
         ))}
       </ScrollView>
 
-      {/* Modal Adicionar */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      {/* Modal Adicionar (com busca) */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>
-              Adicionar alimento
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "#fff",
+                marginBottom: 8,
+              }}
+            >
+              Adicionar alimento {currentMeal ? `— ${currentMeal.name}` : ""}
             </Text>
 
             {/* Busca */}
@@ -551,27 +573,22 @@ export default function Nutrition() {
       </Modal>
 
       {/* Modal Remover */}
-      <Modal
-        visible={customModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
+      <Modal visible={customModalVisible} animationType="slide" transparent>
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
             <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>
               Remover alimento
             </Text>
-            {selectedMealForCustom &&
-              selectedMealForCustom.items.split(", ").map((food: string) => (
-                <TouchableOpacity
-                  key={food}
-                  onPress={() => removeFoodFromMeal(food)}
-                >
-                  <Text style={{ fontSize: 16, padding: 5, color: "#fff" }}>
-                    {food} ❌
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            {currentMeal?.items.map((it) => (
+              <TouchableOpacity
+                key={it.id}
+                onPress={() => removeItem(currentMeal!.id, it.id)}
+              >
+                <Text style={{ fontSize: 16, padding: 6, color: "#fff" }}>
+                  {it.label} ({it.grams}g) ❌
+                </Text>
+              </TouchableOpacity>
+            ))}
             <Button
               title="Fechar"
               onPress={() => setCustomModalVisible(false)}
@@ -586,6 +603,33 @@ export default function Nutrition() {
         style={styles.logo}
         accessibilityLabel="Horus Nutrition logo"
       />
+    </View>
+  );
+}
+
+function Pill({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "#F1F5F9",
+        marginRight: 8,
+        marginBottom: 6,
+      }}
+    >
+      <Text style={{ fontSize: 12, color: "#0F172A" }}>
+        {label}: <Text style={{ fontWeight: "700" }}>{value}</Text> {unit}
+      </Text>
     </View>
   );
 }
@@ -640,7 +684,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#0057C9",
   },
-  mealTitle: { color: "white", fontSize: 16, fontWeight: "bold" },
+  mealTitle: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   mealItems: { color: "#aaa", fontSize: 14, marginTop: 4 },
   addButton: {
     backgroundColor: "#0057C9",
@@ -650,19 +694,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dietCard: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
-    padding: 16,
-    marginRight: 16,
-  },
-  dietCardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#36A2EB",
-    marginBottom: 8,
-  },
-  dietCardItem: { fontSize: 14, color: "#fff", marginBottom: 4 },
   logo: {
     width: 60,
     height: 60,
@@ -671,6 +702,7 @@ const styles = StyleSheet.create({
     top: 40,
     left: 20,
   },
+
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -678,10 +710,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    width: "80%",
+    width: "90%",
     backgroundColor: "#000",
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     borderColor: "#5692B7",
     borderWidth: 1,
   },
@@ -698,7 +730,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#0057C9",
     borderRadius: 8,
-    marginVertical: 10,
+    marginVertical: 8,
     padding: 8,
     backgroundColor: "#000",
     color: "#fff",
