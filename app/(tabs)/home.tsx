@@ -1,5 +1,5 @@
-// app/(tabs)/Nutrition.tsx
-import React, { useState } from "react";
+// app/(tabs)/home.tsx
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -17,76 +17,20 @@ import {
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { useMacros } from "../contexts/MacroContext";
+import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
+import { macrosForServing, Macros, round1 } from "../../src/utils/nutrition";
+import { useRouter } from "expo-router";
 
 interface DonutData {
   name: string;
   value: number;
   color: string;
   isCalorie?: boolean;
-  totalMacros?: number;
-}
-
-const screenWidth = Dimensions.get("window").width;
-
-const initialMeals = [
-  { id: "1", name: "Café da Manhã", items: "" },
-  { id: "2", name: "Lanche da Manhã", items: "" },
-  { id: "3", name: "Almoço", items: "" },
-  { id: "4", name: "Café da Tarde", items: "" },
-  { id: "5", name: "Jantar", items: "" },
-];
-
-const foodDatabase: Record<
-  string,
-  { carb: number; protein: number; fat: number }
-> = {
-  // Café da manhã
-  Pão: { carb: 49, protein: 9, fat: 3.2 },
-  Ovo: { carb: 1, protein: 13, fat: 11 },
-  Leite: { carb: 5, protein: 3.4, fat: 3.3 },
-  Aveia: { carb: 66, protein: 17, fat: 7 },
-  Banana: { carb: 23, protein: 1.1, fat: 0.3 },
-  Maçã: { carb: 14, protein: 0.3, fat: 0.2 },
-  Iogurte: { carb: 6, protein: 3.5, fat: 3 },
-  // Lanche da manhã
-  Castanha: { carb: 14, protein: 20, fat: 50 },
-  "Barra de Cereal": { carb: 65, protein: 7, fat: 10 },
-  "Suco de Laranja": { carb: 10, protein: 0.7, fat: 0.2 },
-  // Almoço
-  Arroz: { carb: 28, protein: 2.5, fat: 0.3 },
-  Feijão: { carb: 14, protein: 9, fat: 0.5 },
-  Frango: { carb: 0, protein: 27, fat: 3.6 },
-  Peixe: { carb: 0, protein: 20, fat: 5 },
-  Salada: { carb: 3, protein: 1, fat: 0 },
-  Legumes: { carb: 7, protein: 2, fat: 0.1 },
-  // Café da tarde
-  "Pão Integral": { carb: 48, protein: 9, fat: 3 },
-  Queijo: { carb: 1.3, protein: 25, fat: 33 },
-  // Jantar
-  "Arroz Integral": { carb: 23, protein: 2.6, fat: 1.5 },
-  "Frango Grelhado": { carb: 0, protein: 27, fat: 3 },
-  "Salada Jantar": { carb: 2, protein: 1, fat: 0 },
-  // Extras experimentais
-  Quinoa: { carb: 21, protein: 4.1, fat: 1.9 },
-  "Batata Doce": { carb: 20, protein: 1.6, fat: 0.1 },
-  Cenoura: { carb: 10, protein: 0.9, fat: 0.2 },
-  Tomate: { carb: 4, protein: 0.9, fat: 0.2 },
-  Abacate: { carb: 9, protein: 2, fat: 15 },
-  "Peito de Peru": { carb: 0, protein: 29, fat: 1 },
-};
-
-const normalizeName = (name: string) =>
-  name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "");
-
-const Donut = ({ item }: { item: DonutData }) => {
-  const radius = 50;
-  const strokeWidth = 14;
-  const totalMacros = item.isCalorie ? 1 : item.totalMacros || 1;
-  const percentage = item.isCalorie ? 100 : (item.value / totalMacros) * 100;
+}) => {
+  const radius = 50,
+    strokeWidth = 14;
+  const total = isCalorie ? 1 : totalMacros || 1;
+  const pct = isCalorie ? 100 : (value / total) * 100;
   const circumference = 2 * Math.PI * radius;
 
   return (
@@ -153,8 +97,113 @@ export default function Nutrition() {
   const [foodName, setFoodName] = useState("");
   const [foodGrams, setFoodGrams] = useState("");
 
+  // busca dentro do modal
+  const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState(q);
+  const [results, setResults] = useState<FoodItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // seleção e porção
+  const [selected, setSelected] = useState<FoodItem | null>(null);
+  const [grams, setGrams] = useState("100");
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(q.trim()), 400);
+    return () => clearTimeout(id);
+  }, [q]);
+  useEffect(() => {
+    setPage(1);
+    setResults([]);
+    setError(null);
+  }, [debounced]);
+
+  useEffect(() => {
+    if (!modalVisible || !debounced) {
+      setResults([]);
+      setHasMore(false);
+      return;
+    }
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    (async () => {
+      try {
+        setLoading(true);
+        const { items, pageCount } = await searchFoodsByName(
+          debounced,
+          page,
+          24,
+          controller.signal
+        );
+        setResults((prev) => (page === 1 ? items : [...prev, ...items]));
+        setHasMore(page < pageCount);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setError(e?.message ?? "Erro ao buscar");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [debounced, page, modalVisible]);
+
+  const openAddModal = (meal: Meal) => {
+    setCurrentMeal(meal);
+    setQ("");
+    setSelected(null);
+    setGrams("100");
+    setModalVisible(true);
+  };
+
+  const addSelectedToMeal = () => {
+    if (!currentMeal || !selected) return;
+    const g = Number(grams);
+    if (!Number.isFinite(g) || g <= 0)
+      return Alert.alert("Informe gramas válidos");
+
+    const portion = macrosForServing(selected.nutrientsPer100g, g);
+
+    addMacros(portion.carbs_g, portion.protein_g, portion.fat_g);
+
+    const entry: MealItem = {
+      id: Math.random().toString(36).slice(2),
+      label: selected.name,
+      grams: g,
+      macros: portion,
+    };
+    setMealsState((ms) =>
+      ms.map((m) =>
+        m.id === currentMeal.id ? { ...m, items: [entry, ...m.items] } : m
+      )
+    );
+    setModalVisible(false);
+  };
+
+  const openRemoveModal = (meal: Meal) => {
+    setCurrentMeal(meal);
+    setCustomModalVisible(true);
+  };
+
+  // remover
   const [customModalVisible, setCustomModalVisible] = useState(false);
-  const [selectedMealForCustom, setSelectedMealForCustom] = useState<any>(null);
+  const removeItem = (mealId: string, itemId: string) => {
+    setMealsState((ms) =>
+      ms.map((m) => {
+        if (m.id !== mealId) return m;
+        const toRemove = m.items.find((i) => i.id === itemId);
+        if (toRemove)
+          addMacros(
+            -toRemove.macros.carbs_g,
+            -toRemove.macros.protein_g,
+            -toRemove.macros.fat_g
+          );
+        return { ...m, items: m.items.filter((i) => i.id !== itemId) };
+      })
+    );
+  };
 
   const data: DonutData[] = [
     { name: "Carboidrato", value: carb, color: "#36A2EB", totalMacros },
@@ -164,94 +213,106 @@ export default function Nutrition() {
       name: "Calorias",
       value: carb * 4 + protein * 4 + fat * 9,
       color: "#4BC0C0",
-      isCalorie: true,
+      isCalorie: true as const,
     },
   ];
 
-  const handleAddFood = (meal: any) => {
-    setCurrentMeal(meal);
-    setFoodName("");
-    setFoodGrams("");
-    setModalVisible(true);
-  };
+  const router = useRouter();
 
-  const saveFood = () => {
-    const cleanName = normalizeName(foodName);
-    const matchedFood = Object.keys(foodDatabase).find(
-      (key) => normalizeName(key) === cleanName
-    );
-    if (!matchedFood)
-      return Alert.alert("⚠️ Alimento não encontrado na base de dados!");
-    const foodData = foodDatabase[matchedFood];
-
-    const gramsValue = parseFloat(foodGrams);
-    if (isNaN(gramsValue) || gramsValue <= 0)
-      return Alert.alert("⚠️ Digite uma quantidade válida!");
-
-    const factor = gramsValue / 100;
-    const carbValue = foodData.carb * factor;
-    const proteinValue = foodData.protein * factor;
-    const fatValue = foodData.fat * factor;
-
-    addMacros(carbValue, proteinValue, fatValue);
-
-    if (currentMeal) {
-      const updatedMeals = mealsState.map((meal) =>
-        meal.id === currentMeal.id
-          ? {
-              ...meal,
-              items: meal.items ? meal.items + ", " + matchedFood : matchedFood,
-            }
-          : meal
+  // ---------- helpers de exibição por porção (igual à tela de search) ----------
+  function deriveDisplayNutrients(item: FoodItem) {
+    if (item.nutrientsPerServing) {
+      const n = item.nutrientsPerServing;
+      const kcal =
+        n.kcal ??
+        Math.round(
+          (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
+        );
+      return {
+        basis: `por porção${
+          item.serving?.sizeText ? ` (${item.serving.sizeText})` : ""
+        }`,
+        carbs: n.carbs_g ?? 0,
+        prot: n.protein_g ?? 0,
+        fat: n.fat_g ?? 0,
+        kcal,
+      };
+    }
+    if (item.serving?.grams && item.nutrientsPer100g) {
+      const f = item.serving.grams / 100;
+      const n = item.nutrientsPer100g;
+      const carbs = (n.carbs_g ?? 0) * f;
+      const prot = (n.protein_g ?? 0) * f;
+      const fat = (n.fat_g ?? 0) * f;
+      const kcal =
+        n.kcal != null
+          ? Math.round(n.kcal * f)
+          : Math.round(carbs * 4 + prot * 4 + fat * 9);
+      return {
+        basis: `por porção (${item.serving.sizeText})`,
+        carbs,
+        prot,
+        fat,
+        kcal,
+      };
+    }
+    const n = item.nutrientsPer100g ?? {};
+    const kcal =
+      n.kcal ??
+      Math.round(
+        (n.carbs_g ?? 0) * 4 + (n.protein_g ?? 0) * 4 + (n.fat_g ?? 0) * 9
       );
-      setMealsState(updatedMeals);
-    }
+    return {
+      basis: "por 100 g",
+      carbs: n.carbs_g ?? 0,
+      prot: n.protein_g ?? 0,
+      fat: n.fat_g ?? 0,
+      kcal,
+    };
+  }
 
-    setModalVisible(false);
-  };
-
-  const openCustomModal = (meal: any) => {
-    setSelectedMealForCustom(meal);
-    setCustomModalVisible(true);
-  };
-
-  const removeFoodFromMeal = (food: string) => {
-    if (!selectedMealForCustom) return;
-
-    const updatedMeals = mealsState.map((meal) => {
-      if (meal.id === selectedMealForCustom.id) {
-        const itemsArray = meal.items
-          .split(", ")
-          .filter((item: string) => item !== food);
-
-        const foodData = foodDatabase[food];
-        if (foodData) {
-          addMacros(-foodData.carb, -foodData.protein, -foodData.fat);
-        }
-
-        return { ...meal, items: itemsArray.join(", ") };
-      }
-      return meal;
-    });
-
-    setMealsState(updatedMeals);
-
-    // Se nenhuma refeição tiver alimentos, zera todos os macros
-    const hasAnyFood = updatedMeals.some((meal) => meal.items.trim() !== "");
-    if (!hasAnyFood) {
-      addMacros(-carb, -protein, -fat);
-    }
-  };
+  // quando escolher um item, já preenche gramas com a porção (se souber)
+  function handleSelectItem(item: FoodItem) {
+    setSelected(item);
+    if (item.serving?.grams) setGrams(String(Math.round(item.serving.grams)));
+    else setGrams("100");
+  }
 
   return (
     <View style={styles.containerOuter}>
+      {/* Botão "Fit" */}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          top: 100,
+          right: 15,
+          backgroundColor: "#000",
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "#0057C9",
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          zIndex: 10,
+        }}
+        onPress={() => router.push("/fit")}
+      >
+        <Ionicons name="barbell-outline" size={22} color="#fff" />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
 
         <View style={styles.donutsCardContainer}>
           <View style={styles.donutRow}>
-            {data.map((item, index) => (
-              <Donut key={index} item={item} />
+            {data.map((d, i) => (
+              <Donut
+                key={i}
+                value={d.value}
+                color={d.color}
+                label={d.label}
+                totalMacros={totalMacros}
+                isCalorie={(d as any).isCalorie}
+              />
             ))}
           </View>
         </View>
@@ -282,7 +343,6 @@ export default function Nutrition() {
               >
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[
                   styles.addButton,
@@ -305,27 +365,187 @@ export default function Nutrition() {
             <Text style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}>
               Adicionar alimento
             </Text>
-            <TextInput
-              placeholder="Nome do alimento"
-              placeholderTextColor="#888"
-              value={foodName}
-              onChangeText={setFoodName}
-              style={styles.modalInput}
-            />
-            <TextInput
-              placeholder="Gramas"
-              placeholderTextColor="#888"
-              value={foodGrams}
-              onChangeText={setFoodGrams}
-              style={styles.modalInput}
-              keyboardType="numeric"
-            />
-            <Button title="Salvar" onPress={saveFood} />
-            <Button
-              title="Cancelar"
-              onPress={() => setModalVisible(false)}
-              color="#FF4C4C"
-            />
+
+            {/* Busca */}
+            <View style={[styles.searchContainer, { marginBottom: 8 }]}>
+              <MaterialIcons name="search" size={20} color="#0057C9" />
+              <TextInput
+                style={[
+                  styles.modalInput,
+                  { borderWidth: 0, marginVertical: 0, paddingVertical: 8 },
+                ]}
+                placeholder="Buscar alimento"
+                placeholderTextColor="#8ba7c4"
+                value={q}
+                onChangeText={setQ}
+              />
+            </View>
+
+            {/* Resultados */}
+            {error ? <Text style={{ color: "#ff6b6b" }}>{error}</Text> : null}
+            <View style={{ maxHeight: 220 }}>
+              {loading && results.length === 0 ? (
+                <ActivityIndicator />
+              ) : (
+                <FlatList
+                  data={results}
+                  keyExtractor={(i) => i.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => handleSelectItem(item)}
+                      style={{
+                        flexDirection: "row",
+                        paddingVertical: 8,
+                        borderBottomColor: "#1f2a37",
+                        borderBottomWidth: 1,
+                      }}
+                    >
+                      {item.imageUrl ? (
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 6,
+                            marginRight: 8,
+                          }}
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 6,
+                            marginRight: 8,
+                            backgroundColor: "#0b1220",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Text>🍎</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: "#fff", fontWeight: "600" }}>
+                          {item.name}
+                        </Text>
+                        {!!item.brand && (
+                          <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
+                            {item.brand}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  onEndReached={() =>
+                    !loading && hasMore && setPage((p) => p + 1)
+                  }
+                  onEndReachedThreshold={0.4}
+                />
+              )}
+            </View>
+
+            {/* Selecionado + porção */}
+            {selected && (
+              <View style={{ marginTop: 10 }}>
+                <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>
+                  {selected.name}
+                </Text>
+
+                {/* Base do item: por porção se existir; senão 100 g */}
+                {(() => {
+                  const d = deriveDisplayNutrients(selected);
+                  return (
+                    <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
+                      {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
+                      kcal
+                    </Text>
+                  );
+                })()}
+
+                {/* Quick actions de porção quando soubermos a gramagem */}
+                {selected.serving?.grams ? (
+                  <View style={{ flexDirection: "row", marginTop: 8, gap: 8 }}>
+                    {[0.5, 1, 2].map((mult) => (
+                      <TouchableOpacity
+                        key={mult}
+                        onPress={() =>
+                          setGrams(
+                            String(Math.round(selected.serving!.grams! * mult))
+                          )
+                        }
+                        style={{
+                          borderWidth: 1,
+                          borderColor: "#0057C9",
+                          borderRadius: 999,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                        }}
+                      >
+                        <Text style={{ color: "#fff" }}>
+                          {mult === 0.5
+                            ? "½ porção"
+                            : mult === 1
+                            ? "1 porção"
+                            : "2 porções"}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : null}
+
+                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>
+                  Porção (g)
+                </Text>
+                <TextInput
+                  value={grams}
+                  onChangeText={(t) => setGrams(t.replace(/[^0-9]/g, ""))}
+                  keyboardType="numeric"
+                  style={styles.modalInput}
+                  placeholder="100"
+                  placeholderTextColor="#8ba7c4"
+                />
+
+                {Number(grams) > 0 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      marginTop: 6,
+                    }}
+                  >
+                    {(() => {
+                      const m = macrosForServing(
+                        selected.nutrientsPer100g,
+                        Number(grams)
+                      );
+                      return (
+                        <>
+                          <Pill label="Carb" value={m.carbs_g} unit="g" />
+                          <Pill label="Prot" value={m.protein_g} unit="g" />
+                          <Pill label="Gord" value={m.fat_g} unit="g" />
+                          <Pill label="KCal" value={m.kcal} unit="kcal" />
+                        </>
+                      );
+                    })()}
+                  </View>
+                )}
+              </View>
+            )}
+
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+              <Button
+                title="Cancelar"
+                color="#FF4C4C"
+                onPress={() => setModalVisible(false)}
+              />
+              <Button
+                title="Adicionar"
+                onPress={addSelectedToMeal}
+                disabled={!selected || !(Number(grams) > 0)}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -464,6 +684,15 @@ const styles = StyleSheet.create({
     padding: 20,
     borderColor: "#5692B7",
     borderWidth: 1,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    backgroundColor: "#000",
   },
   modalInput: {
     borderWidth: 1,

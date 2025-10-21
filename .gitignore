@@ -61,5 +61,55 @@ android/*.jks
 !android/gradle/wrapper/
 !android/gradle/wrapper/**
 
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
+
+# Apenas manter o wrapper (importante)
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
+
+# Apenas manter o wrapper (importante)
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
 .idea/
 *.iml
