@@ -10,12 +10,14 @@ import {
   Text,
   View,
   Pressable,
+  Alert,
 } from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDataStore } from "../store/data";
+import { apiApp } from "@/services/api";
 
 type FormData = z.infer<typeof schema>;
 
@@ -65,6 +67,36 @@ const schema = z.object({
   }),
 });
 
+const mapLevel = (v: string) => {
+  switch (v) {
+    case "sedentario":
+      return "sedentario";
+    case "leve":
+      return "levemente_ativo";
+    case "moderado":
+      return "consideravelmente_ativo";
+    case "ativo":
+      return "ativo_com_frequencia";
+    default:
+      return "sedentario";
+  }
+};
+
+const mapObjective = (v: string) => {
+  switch (v) {
+    case "emagrecimento":
+      return "emagrecer";
+    case "manutencao":
+      return "manutencao";
+    case "ganho_massa":
+      return "ganhar_massa";
+    default:
+      return "manutencao";
+  }
+};
+
+const toNumber = (s: string) => Number(String(s).replace(",", "."));
+
 export default function CadastroPage() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -97,7 +129,7 @@ export default function CadastroPage() {
 
   const setPageTwo = useDataStore((state) => state.setPageTwo);
 
-  function handleCreate(data: FormData) {
+  async function handleCreate(data: FormData) {
     setPageTwo({
       nome: data.nome,
       email: data.email,
@@ -110,9 +142,30 @@ export default function CadastroPage() {
       objetivo: data.objetivo,
     });
 
-    console.log(setPageTwo);
+    const payload = {
+      name: data.nome,
+      email: data.email,
+      password: data.senha,
+      age: Number(data.idade),
+      height: toNumber(data.altura),
+      weight: toNumber(data.peso),
+      gender: data.sexo,
+      level: mapLevel(data.atividade),
+      objective: mapObjective(data.objetivo),
+    };
 
-    router.push("/login");
+    try {
+      const res = await apiApp.post("/users", payload);
+      // se quiser salvar o user completo no zustand:
+      // useDataStore.getState().setUser(res.data);
+
+      router.push("/login");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ?? err?.message ?? "Erro ao registrar";
+      console.error("Cadastro falhou:", msg);
+      Alert.alert("Cadastro", msg);
+    }
   }
 
   useEffect(() => {

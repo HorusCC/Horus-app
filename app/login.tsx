@@ -19,6 +19,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useDataStore } from "@/store/data";
+import { apiApp } from "@/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const schema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -45,34 +47,51 @@ export default function LoginPage() {
   const user = useDataStore((s) => s.user);
   const setPageOne = useDataStore((state) => state.setPageOne);
 
-  function handleCreate(data: FormData) {
+  async function handleCreate(data: FormData) {
     const email = data.email.trim().toLowerCase();
     const password = data.password;
 
-    if (!user.email || !user.senha) {
-      Toast.show({
-        type: "error",
-        text1: "Nenhum usuário cadastrado",
-        text2: "Faça seu cadastro antes de entrar",
-      });
-      return;
-    }
+    try {
+      // chama o backend: POST /api/users/login
+      const res = await apiApp.post("/users/login", { email, password });
+      const { user } = res.data;
 
-    const isValid =
-      user.email.trim().toLowerCase() === email && user.senha === password;
+      // opcional: salva "lembrar-me"
+      if (isSelected) {
+        await AsyncStorage.setItem(
+          "@remember_login",
+          JSON.stringify({ email, password })
+        );
+      } else {
+        await AsyncStorage.removeItem("@remember_login");
+      }
 
-    if (isValid) {
       setPageOne({ email, senha: password });
+
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
       router.replace("/(tabs)/home");
-    } else {
-      Toast.show({
-        type: "error",
-        text1: "Credenciais inválidas",
-        text2: "Verifique seu email e senha",
-      });
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ??
+        (err?.response?.status === 401
+          ? "Credenciais inválidas"
+          : "Falha ao entrar");
+      Toast.show({ type: "error", text1: "Erro no login", text2: msg });
     }
   }
+
+  useEffect(() => {
+    (async () => {
+      const saved = await AsyncStorage.getItem("@remember_login");
+      if (saved) {
+        try {
+          const { email, password } = JSON.parse(saved);
+          // se seus <Input> são controlados pelo RHF, setValue; se forem locais, setState:
+          // setValue("email", email); setValue("password", password);
+        } catch {}
+      }
+    })();
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
