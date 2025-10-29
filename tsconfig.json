@@ -2,11 +2,16 @@
   "extends": "@tsconfig/react-native/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "baseUrl": ".",              // <— ajuda o paths "@/*"
-    "skipLibCheck": true,        // <— ignora checagem interna de libs
+    "baseUrl": ".",
+    "skipLibCheck": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

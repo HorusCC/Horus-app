@@ -1,4 +1,5 @@
 // app/(tabs)/home.tsx
+import { useSmartwatchCalories } from "@/hooks/useSmartwatchCalories";
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -723,9 +724,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     width: "100%",
   },
-  donutContainer: { alignItems: "center", margin: 10, width: 120 },
-  donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
-  donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
+  donutContainer: { 
+    alignItems: "center", 
+    margin: 10, width: 120 
+  },
+  donutLabel: { 
+    fontSize: 14, 
+    fontWeight: "bold", 
+    marginTop: 4 
+  },
+  donutName: { 
+    fontSize: 14, 
+    color: "#fff", 
+    marginTop: 2 
+  },
   remainingCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
