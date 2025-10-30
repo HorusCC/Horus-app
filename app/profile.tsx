@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
 import { Data } from "../types/data";
-import { api } from "../services/api";
+import { api } from "../src/services/api";
 interface ResponseData {
   data: Data;
 }

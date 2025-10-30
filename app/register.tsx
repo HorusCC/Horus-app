@@ -36,35 +36,35 @@ const schema = z.object({
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
-      {
-        message: "Idade deve ser um número positivo",
-      }
+      { message: "Idade deve ser um número positivo" }
     ),
   altura: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
-      {
-        message: "Altura deve ser um número positivo",
-      }
+      { message: "Altura deve ser um número positivo" }
     ),
   peso: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
-      {
-        message: "Peso deve ser um número positivo",
-      }
+      { message: "Peso deve ser um número positivo" }
     ),
-  sexo: z.string().refine((v) => sexoValues.includes(v as any), {
-    message: "Selecione o sexo",
-  }),
-  atividade: z.string().refine((v) => atividadeValues.includes(v as any), {
-    message: "Selecione a atividade",
-  }),
-  objetivo: z.string().refine((v) => objetivoValues.includes(v as any), {
-    message: "Selecione o objetivo",
-  }),
+  sexo: z
+    .string()
+    .refine((v) => sexoValues.includes(v as any), {
+      message: "Selecione o sexo",
+    }),
+  atividade: z
+    .string()
+    .refine((v) => atividadeValues.includes(v as any), {
+      message: "Selecione a atividade",
+    }),
+  objetivo: z
+    .string()
+    .refine((v) => objetivoValues.includes(v as any), {
+      message: "Selecione o objetivo",
+    }),
 });
 
 const mapLevel = (v: string) => {
@@ -112,15 +112,16 @@ export default function CadastroPage() {
     tmb: number;
     classificacao: string;
   } | null>(null);
-  const { colors, theme } = useTheme();
+
+  const { colors } = useTheme();
+  const setPageTwo = useDataStore((state) => state.setPageTwo);
+  const { setProfile } = useMacro();
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
-    resolver: zodResolver(schema),
-  });
+    formState: { errors },
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const genderOptions = [
     { label: "Masculino", value: "masculino" },
@@ -172,7 +173,6 @@ export default function CadastroPage() {
     const alturaM = parseFloat(altura) / 100;
     const pesoKg = parseFloat(peso);
     const idadeNum = parseInt(idade);
-
     if (
       nome &&
       email &&
@@ -187,18 +187,15 @@ export default function CadastroPage() {
       !isNaN(idadeNum)
     ) {
       const imc = pesoKg / (alturaM * alturaM);
-
       const tmb =
         sexo === "masculino"
           ? 88.36 + 13.4 * pesoKg + 4.8 * parseFloat(altura) - 5.7 * idadeNum
           : 447.6 + 9.2 * pesoKg + 3.1 * parseFloat(altura) - 4.3 * idadeNum;
-
       let classificacao = "";
       if (imc < 18.5) classificacao = "Magreza";
       else if (imc < 25) classificacao = "Normal";
       else if (imc < 30) classificacao = "Sobrepeso";
       else classificacao = "Obesidade";
-
       setResultado({ imc, tmb, classificacao });
     } else {
       setResultado(null);
@@ -233,6 +230,7 @@ export default function CadastroPage() {
         value={nome}
         onChangeText={setNome}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
       <Input
         name="email"
@@ -245,6 +243,7 @@ export default function CadastroPage() {
         value={email}
         onChangeText={setEmail}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
       <Input
         name="senha"
@@ -258,6 +257,7 @@ export default function CadastroPage() {
         secureTextEntry
         onChangeText={setSenha}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
       <Input
         name="idade"
@@ -271,6 +271,7 @@ export default function CadastroPage() {
         keyboardType="numeric"
         onChangeText={setIdade}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
       <Input
         name="altura"
@@ -284,6 +285,7 @@ export default function CadastroPage() {
         keyboardType="numeric"
         onChangeText={setAltura}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
       <Input
         name="peso"
@@ -302,7 +304,10 @@ export default function CadastroPage() {
       <Select
         name="sexo"
         control={control}
-        options={genderOptions}
+        options={[
+          { label: "Masculino", value: "masculino" },
+          { label: "Feminino", value: "feminino" },
+        ]}
         error={errors.sexo?.message}
       />
 
@@ -342,7 +347,6 @@ export default function CadastroPage() {
           <Text style={styles.resultText}>
             Classificação: {resultado.classificacao}
           </Text>
-
           <View style={styles.table}>
             <Text style={styles.tableTitle}>Classificação IMC</Text>
             <Text style={styles.tableText}>• Magreza: abaixo de 18.5</Text>
@@ -366,11 +370,7 @@ export default function CadastroPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 25,
-    backgroundColor: "#00060E",
-    flexGrow: 1,
-  },
+  container: { padding: 25, backgroundColor: "#00060E", flexGrow: 1 },
   image: {
     height: 180,
     alignSelf: "center",
@@ -410,22 +410,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 5,
   },
-  table: {
-    marginTop: 10,
-  },
-  tableTitle: {
-    fontWeight: "700",
-    color: "#5692B7",
-    marginBottom: 5,
-  },
-  tableText: {
-    color: "#ccc",
-  },
-  label: {
-    marginBottom: 5,
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  table: { marginTop: 10 },
+  tableTitle: { fontWeight: "700", color: "#5692B7", marginBottom: 5 },
+  tableText: { color: "#ccc" },
+  label: { marginBottom: 5, fontSize: 16, fontWeight: "500" },
   input: {
     width: "auto",
     height: 50,

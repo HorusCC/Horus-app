@@ -1,5 +1,6 @@
 // app/(tabs)/home.tsx
-import React, { useEffect, useState, useRef } from "react";
+import { useSmartwatchCalories } from "@/hooks/useSmartwatchCalories";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -16,12 +17,18 @@ import {
 } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useMacros } from "../contexts/MacroContext";
-import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
-import { macrosForServing, Macros, round1 } from "../../src/utils/nutrition";
 import { useRouter } from "expo-router";
 
-type MealItem = { id: string; label: string; grams: number; macros: Macros };
+import { useMacro } from "@/contexts/macroContext";
+import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
+import { macrosForServing, round1 } from "@/src/utils/nutrition";
+
+type MealItem = {
+  id: string;
+  label: string;
+  grams: number;
+  macros: { carbs_g: number; protein_g: number; fat_g: number; kcal: number };
+};
 type Meal = { id: string; name: string; items: MealItem[] };
 
 const initialMeals: Meal[] = [
@@ -34,22 +41,20 @@ const initialMeals: Meal[] = [
 
 const Donut = ({
   value,
+  goal,
   color,
   label,
-  totalMacros,
-  isCalorie = false,
 }: {
   value: number;
+  goal: number;
   color: string;
   label: string;
-  totalMacros?: number;
-  isCalorie?: boolean;
 }) => {
-  const radius = 50,
-    strokeWidth = 14;
-  const total = isCalorie ? 1 : totalMacros || 1;
-  const pct = isCalorie ? 100 : (value / total) * 100;
+  const radius = 50;
+  const strokeWidth = 14;
+  const pct = goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
   const circumference = 2 * Math.PI * radius;
+
   return (
     <View style={styles.donutContainer}>
       <Svg
@@ -92,25 +97,52 @@ const Donut = ({
         </SvgText>
       </Svg>
       <Text style={[styles.donutLabel, { color }]}>
-        {Math.round(value)}
-        {isCalorie ? " Kcal" : " g"}
+        {Math.round(value)} {label === "Calorias" ? "kcal" : "g"}
       </Text>
       <Text style={styles.donutName}>{label}</Text>
     </View>
   );
 };
 
+function Pill({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "#F1F5F9",
+        marginRight: 8,
+        marginBottom: 6,
+      }}
+    >
+      <Text style={{ fontSize: 12, color: "#0F172A" }}>
+        {label}: <Text style={{ fontWeight: "700" }}>{round1(value)}</Text>{" "}
+        {unit}
+      </Text>
+    </View>
+  );
+}
+
 export default function Home() {
-  const { carb, protein, fat, addMacros } = useMacros();
-  const totalMacros = carb + protein + fat;
+  const router = useRouter();
+  const { targets, consumed, remaining, addFood, removeFood } = useMacro();
 
   const [mealsState, setMealsState] = useState<Meal[]>(initialMeals);
 
-  // modal de adicionar
+  // modal adicionar alimento
   const [modalVisible, setModalVisible] = useState(false);
   const [currentMeal, setCurrentMeal] = useState<Meal | null>(null);
 
-  // busca dentro do modal
+  // busca
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState(q);
   const [results, setResults] = useState<FoodItem[]>([]);
@@ -120,20 +152,26 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // seleção e porção
+  // seleção/porção
   const [selected, setSelected] = useState<FoodItem | null>(null);
   const [grams, setGrams] = useState("100");
 
+  // modal remover
+  const [customModalVisible, setCustomModalVisible] = useState(false);
+
+  // debounce
   useEffect(() => {
     const id = setTimeout(() => setDebounced(q.trim()), 400);
     return () => clearTimeout(id);
   }, [q]);
+
   useEffect(() => {
     setPage(1);
     setResults([]);
     setError(null);
   }, [debounced]);
 
+  // busca na API
   useEffect(() => {
     if (!modalVisible || !debounced) {
       setResults([]);
@@ -143,6 +181,7 @@ export default function Home() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+
     (async () => {
       try {
         setLoading(true);
@@ -155,11 +194,13 @@ export default function Home() {
         setResults((prev) => (page === 1 ? items : [...prev, ...items]));
         setHasMore(page < pageCount);
       } catch (e: any) {
-        if (e?.name !== "AbortError") setError(e?.message ?? "Erro ao buscar");
+        if (e?.name !== "AbortError")
+          setError(e?.message ?? "Erro ao buscar alimentos");
       } finally {
         setLoading(false);
       }
     })();
+
     return () => controller.abort();
   }, [debounced, page, modalVisible]);
 
@@ -177,12 +218,26 @@ export default function Home() {
     if (!Number.isFinite(g) || g <= 0)
       return Alert.alert("Informe gramas válidos");
 
-    const portion = macrosForServing(selected.nutrientsPer100g, g);
+    // mesmo id no contexto e na lista local
+    const id = `${selected.id}-${Date.now()}`;
 
-    addMacros(portion.carbs_g, portion.protein_g, portion.fat_g);
+    // adiciona no contexto (conta para os donuts)
+    addFood({
+      id,
+      name: selected.name,
+      grams: g,
+      nutrientsPer100g: {
+        carbs_g: selected.nutrientsPer100g?.carbs_g,
+        protein_g: selected.nutrientsPer100g?.protein_g,
+        fat_g: selected.nutrientsPer100g?.fat_g,
+        kcal: selected.nutrientsPer100g?.kcal,
+      },
+    });
 
+    // adiciona na refeição (UI)
+    const portion = macrosForServing(selected.nutrientsPer100g || {}, g);
     const entry: MealItem = {
-      id: Math.random().toString(36).slice(2),
+      id,
       label: selected.name,
       grams: g,
       macros: portion,
@@ -200,39 +255,48 @@ export default function Home() {
     setCustomModalVisible(true);
   };
 
-  // remover
-  const [customModalVisible, setCustomModalVisible] = useState(false);
   const removeItem = (mealId: string, itemId: string) => {
     setMealsState((ms) =>
       ms.map((m) => {
         if (m.id !== mealId) return m;
-        const toRemove = m.items.find((i) => i.id === itemId);
-        if (toRemove)
-          addMacros(
-            -toRemove.macros.carbs_g,
-            -toRemove.macros.protein_g,
-            -toRemove.macros.fat_g
-          );
+        // remove do contexto (donuts atualizam)
+        removeFood(itemId);
         return { ...m, items: m.items.filter((i) => i.id !== itemId) };
       })
     );
   };
 
-  const data = [
-    { label: "Carboidrato", value: carb, color: "#36A2EB" },
-    { label: "Proteína", value: protein, color: "#FF6384" },
-    { label: "Gordura", value: fat, color: "#FFCE56" },
-    {
-      label: "Calorias",
-      value: carb * 4 + protein * 4 + fat * 9,
-      color: "#4BC0C0",
-      isCalorie: true as const,
-    },
-  ];
+  // donuts
+  const donuts = targets
+    ? [
+        {
+          label: "Carboidrato",
+          value: consumed.carbs_g,
+          goal: targets.carbs_g,
+          color: "#36A2EB",
+        },
+        {
+          label: "Proteína",
+          value: consumed.protein_g,
+          goal: targets.protein_g,
+          color: "#FF6384",
+        },
+        {
+          label: "Gordura",
+          value: consumed.fat_g,
+          goal: targets.fat_g,
+          color: "#FFCE56",
+        },
+        {
+          label: "Calorias",
+          value: consumed.calories,
+          goal: targets.calories,
+          color: "#4BC0C0",
+        },
+      ]
+    : [];
 
-  const router = useRouter();
-
-  // ---------- helpers de exibição por porção (igual à tela de search) ----------
+  // helper de exibição (por porção/100g)
   function deriveDisplayNutrients(item: FoodItem) {
     if (item.nutrientsPerServing) {
       const n = item.nutrientsPerServing;
@@ -284,29 +348,11 @@ export default function Home() {
     };
   }
 
-  // quando escolher um item, já preenche gramas com a porção (se souber)
-  function handleSelectItem(item: FoodItem) {
-    setSelected(item);
-    if (item.serving?.grams) setGrams(String(Math.round(item.serving.grams)));
-    else setGrams("100");
-  }
-
   return (
     <View style={styles.containerOuter}>
       {/* Botão "Fit" */}
       <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: 100,
-          right: 15,
-          backgroundColor: "#000",
-          borderRadius: 20,
-          borderWidth: 1,
-          borderColor: "#0057C9",
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          zIndex: 10,
-        }}
+        style={styles.fitButton}
         onPress={() => router.push("/fit")}
       >
         <Ionicons name="barbell-outline" size={22} color="#fff" />
@@ -315,21 +361,51 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
 
-        <View style={styles.donutsCardContainer}>
-          <View style={styles.donutRow}>
-            {data.map((d, i) => (
-              <Donut
-                key={i}
-                value={d.value}
-                color={d.color}
-                label={d.label}
-                totalMacros={totalMacros}
-                isCalorie={(d as any).isCalorie}
-              />
-            ))}
+        {/* Donuts */}
+        {targets ? (
+          <View style={styles.donutsCardContainer}>
+            <View style={styles.donutRow}>
+              {donuts.map((d, i) => (
+                <Donut
+                  key={i}
+                  value={d.value}
+                  goal={d.goal}
+                  color={d.color}
+                  label={d.label}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        ) : (
+          <View
+            style={{
+              marginHorizontal: 16,
+              padding: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#0057C9",
+            }}
+          >
+            <Text style={{ color: "#fff" }}>
+              Complete o cadastro para calcular suas metas diárias.
+            </Text>
+          </View>
+        )}
 
+        {/* Card: quanto falta hoje */}
+        {remaining && (
+          <View style={styles.remainingCard}>
+            <Text style={styles.remainingTitle}>Faltam hoje</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              <Pill label="Carb" value={remaining.carbs_g} unit="g" />
+              <Pill label="Prot" value={remaining.protein_g} unit="g" />
+              <Pill label="Gord" value={remaining.fat_g} unit="g" />
+              <Pill label="Kcal" value={remaining.calories} unit="kcal" />
+            </View>
+          </View>
+        )}
+
+        {/* Lista de refeições */}
         <Text style={styles.sectionTitle}>Alimentação</Text>
         {mealsState.map((meal) => (
           <View key={meal.id} style={styles.mealCard}>
@@ -337,7 +413,9 @@ export default function Home() {
               <Text style={styles.mealTitle}>{meal.name}</Text>
               {meal.items.length ? (
                 <Text style={styles.mealItems}>
-                  {meal.items.map((i) => `${i.label} (${i.grams}g)`).join(", ")}
+                  {meal.items
+                    .map((i) => `${i.label} (${i.grams}g)`)
+                    .join(", ")}
                 </Text>
               ) : (
                 <Text
@@ -352,12 +430,14 @@ export default function Home() {
             </View>
 
             <View style={{ flexDirection: "row" }}>
+              {/* ➕ abre o modal de adicionar com a busca */}
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => openAddModal(meal)}
               >
                 <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.addButton,
@@ -414,7 +494,12 @@ export default function Home() {
                   keyExtractor={(i) => i.id}
                   renderItem={({ item }) => (
                     <TouchableOpacity
-                      onPress={() => handleSelectItem(item)}
+                      onPress={() => {
+                        setSelected(item);
+                        if (item.serving?.grams)
+                          setGrams(String(Math.round(item.serving.grams)));
+                        else setGrams("100");
+                      }}
                       style={{
                         flexDirection: "row",
                         paddingVertical: 8,
@@ -459,9 +544,7 @@ export default function Home() {
                       </View>
                     </TouchableOpacity>
                   )}
-                  onEndReached={() =>
-                    !loading && hasMore && setPage((p) => p + 1)
-                  }
+                  onEndReached={() => !loading && hasMore && setPage((p) => p + 1)}
                   onEndReachedThreshold={0.4}
                 />
               )}
@@ -474,19 +557,16 @@ export default function Home() {
                   {selected.name}
                 </Text>
 
-                {/* Base do item: por porção se existir; senão 100 g */}
                 {(() => {
                   const d = deriveDisplayNutrients(selected);
                   return (
                     <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
                       {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
-                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
-                      kcal
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal} kcal
                     </Text>
                   );
                 })()}
 
-                {/* Quick actions de porção quando soubermos a gramagem */}
                 {selected.serving?.grams ? (
                   <View style={{ flexDirection: "row", marginTop: 8, gap: 8 }}>
                     {[0.5, 1, 2].map((mult) => (
@@ -517,9 +597,7 @@ export default function Home() {
                   </View>
                 ) : null}
 
-                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>
-                  Porção (g)
-                </Text>
+                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>Porção (g)</Text>
                 <TextInput
                   value={grams}
                   onChangeText={(t) => setGrams(t.replace(/[^0-9]/g, ""))}
@@ -539,7 +617,7 @@ export default function Home() {
                   >
                     {(() => {
                       const m = macrosForServing(
-                        selected.nutrientsPer100g,
+                        selected.nutrientsPer100g || {},
                         Number(grams)
                       );
                       return (
@@ -547,7 +625,7 @@ export default function Home() {
                           <Pill label="Carb" value={m.carbs_g} unit="g" />
                           <Pill label="Prot" value={m.protein_g} unit="g" />
                           <Pill label="Gord" value={m.fat_g} unit="g" />
-                          <Pill label="KCal" value={m.kcal} unit="kcal" />
+                          <Pill label="Kcal" value={m.kcal} unit="kcal" />
                         </>
                       );
                     })()}
@@ -599,37 +677,10 @@ export default function Home() {
       </Modal>
 
       <Image
-        source={require("../../assets/images/horusNew.png")}
+        source={require("@/assets/images/horusNew.png")}
         style={styles.logo}
         accessibilityLabel="Horus Nutrition logo"
       />
-    </View>
-  );
-}
-
-function Pill({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-}) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: "#F1F5F9",
-        marginRight: 8,
-        marginBottom: 6,
-      }}
-    >
-      <Text style={{ fontSize: 12, color: "#0F172A" }}>
-        {label}: <Text style={{ fontWeight: "700" }}>{value}</Text> {unit}
-      </Text>
     </View>
   );
 }
@@ -643,6 +694,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
     color: "#0057C9",
+  },
+  fitButton: {
+    position: "absolute",
+    top: 100,
+    right: 15,
+    backgroundColor: "#000",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    zIndex: 10,
   },
   donutsCardContainer: {
     flexDirection: "row",
@@ -661,14 +724,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     width: "100%",
   },
-  donutContainer: { alignItems: "center", margin: 10, width: 120 },
-  donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
-  donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
+  donutContainer: { 
+    alignItems: "center", 
+    margin: 10, width: 120 
+  },
+  donutLabel: { 
+    fontSize: 14, 
+    fontWeight: "bold", 
+    marginTop: 4 
+  },
+  donutName: { 
+    fontSize: 14, 
+    color: "#fff", 
+    marginTop: 2 
+  },
+  remainingCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "#0057C9",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+  },
+  remainingTitle: {
+    color: "#fff",
+    fontWeight: "700",
+    marginBottom: 8,
+    fontSize: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#0057C9",
-    marginTop: 30,
+    marginTop: 24,
     marginBottom: 10,
     marginLeft: 16,
   },
@@ -703,6 +792,7 @@ const styles = StyleSheet.create({
     left: 20,
   },
 
+  // 🔧 estilos do modal e inputs (os que faltavam)
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

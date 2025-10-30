@@ -20,20 +20,6 @@ export default function SettingsScreen() {
     <ScrollView style={[styles.container]}>
       <Text style={[styles.header, { color: "#0057C9" }]}>Configurações</Text>
 
-      {/* Alterar senha */}
-      <TouchableOpacity
-        style={[styles.optionRow, { backgroundColor: "#000", borderColor }]}
-        onPress={() => router.push("/change-password")}
-      >
-        <View style={styles.optionLeft}>
-          <Ionicons name="key-outline" size={24} color="#0057C9" />
-          <Text style={[styles.optionText, { color: "#5692B7" }]}>
-            Alterar Senha
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward-outline" size={20} color="#999" />
-      </TouchableOpacity>
-
       {/* Privacidade */}
       <TouchableOpacity
         style={[styles.optionRow, { backgroundColor: "#000", borderColor }]}
