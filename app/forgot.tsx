@@ -1,18 +1,38 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { apiApp } from "@/services/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const router = useRouter();
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!email) {
       Alert.alert("Erro", "Por favor, insira seu email.");
       return;
     }
-    // Aqui vai a lógica de envio do email
-    Alert.alert("Sucesso", "Um link de redefinição foi enviado para seu email.");
+
+    try {
+      await apiApp.post("/users/forgot-password", { email });
+      Alert.alert(
+        "Sucesso",
+        "Um link de redefinição foi enviado para seu email."
+      );
+    } catch (err: any) {
+      Alert.alert(
+        "Erro",
+        err.response?.data?.message || "Falha ao enviar email"
+      );
+    }
   };
 
   return (
@@ -25,7 +45,9 @@ export default function ForgotPasswordScreen() {
 
       {/* Título */}
       <Text style={styles.title}>Esqueceu a senha?</Text>
-      <Text style={styles.subtitle}>Preencha o campo para recuperar sua conta</Text>
+      <Text style={styles.subtitle}>
+        Preencha o campo para recuperar sua conta
+      </Text>
 
       {/* Campo de email */}
       <TextInput
