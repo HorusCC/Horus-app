@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useDataStore } from "@/store/data";
-import { api } from "../../services/api";
+import { api } from "../../src/services/api";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { Data } from "../../types/data";

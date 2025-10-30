@@ -70,7 +70,7 @@ export default function Fit() {
             <Donut value={completed} total={weeklyGoal}  color="#36A2EB" label="Meta Semanal"  suffix="" />
             <Donut value={cardioDone} total={cardioGoal}  color="#4BC0C0" label="Cardio (min)" suffix="m" />
             <Donut value={strengthDone} total={strengthGoal} color="#FF6384" label="Séries Força" suffix="" />
-            <Donut value={calories} total={500} color="#FFA500" label="Calorias (watch)" suffix=" kcal" />
+            <Donut value={calories} total={500} color="#FFA500" label="Calorias" suffix=" kcal" />
           </View>
         </View>
 
