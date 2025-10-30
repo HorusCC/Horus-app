@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useDataStore } from "@/store/data";
-import { api } from "../../services/api";
+import { apiIA } from "../../services/api";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
 import { Data } from "../../types/data";
@@ -32,7 +32,7 @@ export default function GenerateDiet() {
           throw new Error("Filed load diet");
         }
 
-        const response = await api.post<ResponseData>("/create", {
+        const response = await apiIA.post<ResponseData>("/create", {
           name: user.nome,
           email: user.email,
           password: user.senha,
