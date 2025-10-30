@@ -1,13 +1,33 @@
 // app/(tabs)/profile.tsx
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Button,
+  Pressable,
+} from "react-native";
 import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
 import { Data } from "../types/data";
 import { api } from "../services/api";
+import { MaterialIcons } from "@expo/vector-icons";
 interface ResponseData {
   data: Data;
 }
+
+type EditableFieldProps = {
+  label: string;
+  value: string | number | null | undefined;
+  suffix?: string;
+  keyboardType?: "default" | "numeric";
+  userId: string;
+  payloadKey: "age" | "weight" | "height" | "name";
+  parse?: (v: string) => any;
+  onLocalUpdate: (next: any) => void;
+};
 
 const toNumber = (v?: string) =>
   Number(
@@ -98,12 +118,12 @@ export default function ProfileScreen() {
         <View style={styles.profileBox}>
           <Text style={styles.subtitle}>Informações Pessoais</Text>
 
-          <View style={styles.card}>
+          <View style={styles.cardStatic}>
             <Text style={styles.label}>Nome:</Text>
             <Text style={styles.value}>{user.nome}</Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={styles.cardStatic}>
             <Text style={styles.label}>Sexo:</Text>
             <Text style={styles.valueStatic}>{user.sexo}</Text>
           </View>
@@ -113,17 +133,65 @@ export default function ProfileScreen() {
           <Text style={styles.subtitle}>Dados Corporais</Text>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Idade:</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Text style={styles.label}>Idade:</Text>
+              <Pressable accessibilityLabel="Editar">
+                <MaterialIcons
+                  name="edit"
+                  size={25}
+                  color="#5692B7"
+                  style={styles.icon}
+                />
+              </Pressable>
+            </View>
             <Text style={styles.value}>{user.idade} anos</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Peso:</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Text style={styles.label}>Peso:</Text>
+              <Pressable accessibilityLabel="Editar">
+                <MaterialIcons
+                  name="edit"
+                  size={25}
+                  color="#5692B7"
+                  style={styles.icon}
+                />
+              </Pressable>
+            </View>
             <Text style={styles.value}>{user.peso} kg's</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Altura:</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Text style={styles.label}>Altura:</Text>
+              <Pressable accessibilityLabel="Editar">
+                <MaterialIcons
+                  name="edit"
+                  size={25}
+                  color="#5692B7"
+                  style={styles.icon}
+                />
+              </Pressable>
+            </View>
             <Text style={styles.value}>{user.altura} cm's</Text>
           </View>
 
@@ -238,5 +306,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
+  },
+  icon: {
+    marginRight: 4,
   },
 });
