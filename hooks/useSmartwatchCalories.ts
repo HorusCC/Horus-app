@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDailyCalories } from "src/services/smartwatchApi";
+import { getDailyCalories } from "@/src/services/smartwatchApi";
 import { todayISO } from "../lib/dates";
 
 export function useSmartwatchCalories() {

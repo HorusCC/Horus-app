@@ -1,5 +1,5 @@
 import { SMARTWATCH_API_URL, SMARTWATCH_TOKEN } from "@/lib/config";
-import { todayISO } from "lib/dates";
+import { todayISO } from "@/lib/date";
 
 export async function getDailyCalories(dateISO: string = todayISO()) {
   const url = `${SMARTWATCH_API_URL}/metrics/daily?date=${dateISO}`;
