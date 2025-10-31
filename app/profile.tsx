@@ -12,7 +12,7 @@ import {
 import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
 import { Data } from "../types/data";
-import { api } from "../services/api";
+import { apiApp } from "../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 interface ResponseData {
   data: Data;
@@ -83,7 +83,7 @@ export default function ProfileScreen() {
           throw new Error("Filed load profile");
         }
 
-        const response = await api.post<ResponseData>("/profile", {
+        const response = await apiApp.post<ResponseData>("/users", {
           name: user.nome,
           email: user.email,
           password: user.senha,
