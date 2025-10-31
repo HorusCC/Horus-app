@@ -14,20 +14,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Data } from "../types/data";
 import { apiApp } from "../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useEffect } from "react";
 interface ResponseData {
   data: Data;
 }
 
-type EditableFieldProps = {
-  label: string;
-  value: string | number | null | undefined;
-  suffix?: string;
-  keyboardType?: "default" | "numeric";
-  userId: string;
-  payloadKey: "age" | "weight" | "height" | "name";
-  parse?: (v: string) => any;
-  onLocalUpdate: (next: any) => void;
-};
+// type EditableFieldProps = {
+//   label: string;
+//   value: string | number | null | undefined;
+//   suffix?: string;
+//   keyboardType?: "default" | "numeric";
+//   userId: string;
+//   payloadKey: "age" | "weight" | "height" | "name";
+//   parse?: (v: string) => any;
+//   onLocalUpdate: (next: any) => void;
+// };
 
 const toNumber = (v?: string) =>
   Number(
@@ -66,6 +67,7 @@ const calcTMB = (
 
 export default function ProfileScreen() {
   const user = useDataStore((state) => state.user);
+  const setPageTwo = useDataStore((s) => s.setPageTwo);
 
   const pesoKg = toNumber(user.peso);
   const alturaCm = toNumber(user.altura);
@@ -75,32 +77,33 @@ export default function ProfileScreen() {
   const imcClass = classifyIMC(imc ?? undefined);
   const tmb = calcTMB(user.sexo, pesoKg, alturaCm, idadeNum);
 
-  const {} = useQuery({
-    queryKey: ["profile"],
+  const { data } = useQuery({
+    queryKey: ["profile", user.email],
+    enabled: !!user.email,
     queryFn: async () => {
-      try {
-        if (!user) {
-          throw new Error("Filed load profile");
-        }
-
-        const response = await apiApp.post<ResponseData>("/users", {
-          name: user.nome,
-          email: user.email,
-          password: user.senha,
-          age: user.idade,
-          weight: user.peso,
-          height: user.altura,
-          gender: user.sexo,
-          level: user.atividade,
-          objective: user.objetivo,
-        });
-
-        return response.data.data;
-      } catch (error) {
-        console.log(error);
-      }
+      const res = await apiApp.get("/users");
+      const found = res.data.find(
+        (u: any) => u.email?.toLowerCase() === user.email?.toLowerCase()
+      );
+      return found ?? null;
     },
   });
+
+  useEffect(() => {
+    if (!data) return;
+    const u: any = data;
+    setPageTwo({
+      nome: u.name ?? "",
+      email: u.email ?? user.email,
+      senha: "",
+      idade: String(u.age ?? ""),
+      altura: String(u.height ?? ""),
+      peso: String(u.weight ?? ""),
+      sexo: u.gender ?? "",
+      atividade: u.level ?? "",
+      objetivo: u.objective ?? "",
+    });
+  }, [data, setPageTwo, user.email]);
 
   return (
     <View style={styles.wrapper}>
