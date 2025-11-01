@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDataStore } from "../store/data";
-import { apiApp } from "@/services/api";
+import { apiApp } from "@/services/api"; // ✅ mantém apiApp
 
 type FormData = z.infer<typeof schema>;
 
@@ -36,25 +36,19 @@ const schema = z.object({
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
-      {
-        message: "Idade deve ser um número positivo",
-      }
+      { message: "Idade deve ser um número positivo" }
     ),
   altura: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
-      {
-        message: "Altura deve ser um número positivo",
-      }
+      { message: "Altura deve ser um número positivo" }
     ),
   peso: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
-      {
-        message: "Peso deve ser um número positivo",
-      }
+      { message: "Peso deve ser um número positivo" }
     ),
   sexo: z.string().refine((v) => sexoValues.includes(v as any), {
     message: "Selecione o sexo",
@@ -112,13 +106,14 @@ export default function CadastroPage() {
     tmb: number;
     classificacao: string;
   } | null>(null);
-  const { colors, theme } = useTheme();
+
+  const { colors } = useTheme();
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -143,9 +138,9 @@ export default function CadastroPage() {
     });
 
     const payload = {
-      name: data.nome,
-      email: data.email,
-      password: data.senha,
+      name: data.nome.trim(),
+      email: data.email.trim(),
+      password: String(data.senha),
       age: Number(data.idade),
       height: toNumber(data.altura),
       weight: toNumber(data.peso),
@@ -155,10 +150,8 @@ export default function CadastroPage() {
     };
 
     try {
-      const res = await apiApp.post("/users", payload);
-      // se quiser salvar o user completo no zustand:
-      // useDataStore.getState().setUser(res.data);
-
+      await apiApp.post("/users", payload); // ✅ mantém apiApp
+      Alert.alert("Cadastro", "Usuário cadastrado com sucesso!");
       router.push("/login");
     } catch (err: any) {
       const msg =
@@ -187,7 +180,6 @@ export default function CadastroPage() {
       !isNaN(idadeNum)
     ) {
       const imc = pesoKg / (alturaM * alturaM);
-
       const tmb =
         sexo === "masculino"
           ? 88.36 + 13.4 * pesoKg + 4.8 * parseFloat(altura) - 5.7 * idadeNum
@@ -233,6 +225,7 @@ export default function CadastroPage() {
         value={nome}
         onChangeText={setNome}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
       <Input
         name="email"
@@ -245,6 +238,7 @@ export default function CadastroPage() {
         value={email}
         onChangeText={setEmail}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
       <Input
         name="senha"
@@ -258,6 +252,7 @@ export default function CadastroPage() {
         secureTextEntry
         onChangeText={setSenha}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
       <Input
         name="idade"
@@ -271,6 +266,7 @@ export default function CadastroPage() {
         keyboardType="numeric"
         onChangeText={setIdade}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
       <Input
         name="altura"
@@ -284,6 +280,7 @@ export default function CadastroPage() {
         keyboardType="numeric"
         onChangeText={setAltura}
       />
+
       <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
       <Input
         name="peso"
@@ -302,7 +299,10 @@ export default function CadastroPage() {
       <Select
         name="sexo"
         control={control}
-        options={genderOptions}
+        options={[
+          { label: "Masculino", value: "masculino" },
+          { label: "Feminino", value: "feminino" },
+        ]}
         error={errors.sexo?.message}
       />
 
@@ -318,6 +318,7 @@ export default function CadastroPage() {
           { label: "Moderadamente ativo", value: "moderado" },
           { label: "Muito ativo", value: "ativo" },
         ]}
+        error={errors.atividade?.message}
       />
 
       <Text style={[styles.label, { color: colors.textRegister }]}>
@@ -331,6 +332,7 @@ export default function CadastroPage() {
           { label: "Manutenção", value: "manutencao" },
           { label: "Ganho de massa muscular", value: "ganho_massa" },
         ]}
+        error={errors.objetivo?.message}
       />
 
       {resultado && (
@@ -342,14 +344,6 @@ export default function CadastroPage() {
           <Text style={styles.resultText}>
             Classificação: {resultado.classificacao}
           </Text>
-
-          <View style={styles.table}>
-            <Text style={styles.tableTitle}>Classificação IMC</Text>
-            <Text style={styles.tableText}>• Magreza: abaixo de 18.5</Text>
-            <Text style={styles.tableText}>• Normal: entre 18.5 e 24.9</Text>
-            <Text style={styles.tableText}>• Sobrepeso: entre 25.0 e 29.9</Text>
-            <Text style={styles.tableText}>• Obesidade: acima de 30.0</Text>
-          </View>
         </View>
       )}
 
@@ -366,73 +360,13 @@ export default function CadastroPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 25,
-    backgroundColor: "#00060E",
-    flexGrow: 1,
-  },
-  image: {
-    height: 180,
-    alignSelf: "center",
-    resizeMode: "contain",
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#fff",
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#5692B7",
-    marginBottom: 20,
-  },
-  button: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 10,
-    marginTop: 10,
-    borderRadius: 10,
-  },
-  resultContainer: {
-    marginTop: 20,
-    backgroundColor: "rgba(0, 87, 201, 0.15)",
-    padding: 15,
-    borderRadius: 8,
-  },
-  resultText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#fff",
-    marginBottom: 5,
-  },
-  table: {
-    marginTop: 10,
-  },
-  tableTitle: {
-    fontWeight: "700",
-    color: "#5692B7",
-    marginBottom: 5,
-  },
-  tableText: {
-    color: "#ccc",
-  },
-  label: {
-    marginBottom: 5,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  input: {
-    width: "auto",
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#0652b4ff",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
+  container: { padding: 25, backgroundColor: "#00060E", flexGrow: 1 },
+  image: { height: 180, alignSelf: "center", resizeMode: "contain", marginBottom: 10 },
+  title: { fontSize: 26, fontWeight: "bold", textAlign: "center", color: "#fff", marginBottom: 5 },
+  subtitle: { fontSize: 16, textAlign: "center", color: "#5692B7", marginBottom: 20 },
+  button: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 10, marginTop: 10, borderRadius: 10 },
+  resultContainer: { marginTop: 20, backgroundColor: "rgba(0, 87, 201, 0.15)", padding: 15, borderRadius: 8 },
+  resultText: { fontSize: 16, fontWeight: "500", color: "#fff", marginBottom: 5 },
+  label: { marginBottom: 5, fontSize: 16, fontWeight: "500" },
+  input: { width: "auto", height: 50, borderWidth: 1, borderColor: "#0652b4ff", borderRadius: 8, padding: 12, fontSize: 16 },
 });

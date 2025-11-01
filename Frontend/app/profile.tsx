@@ -3,18 +3,13 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
+import { apiApp } from "@/services/api";
 import { Data } from "../types/data";
-import { api } from "../services/api";
-interface ResponseData {
-  data: Data;
-}
 
-const toNumber = (v?: string) =>
-  Number(
-    String(v ?? "")
-      .replace(/[^\d.,-]/g, "")
-      .replace(",", ".")
-  );
+type ResponseData = { data: Data };
+
+const toNumber = (v?: string | number) =>
+  Number(String(v ?? "").replace(/[^\d.,-]/g, "").replace(",", "."));
 
 const calcIMC = (pesoKg: number, alturaCm: number) => {
   if (!pesoKg || !alturaCm) return null;
@@ -45,47 +40,39 @@ const calcTMB = (
 };
 
 export default function ProfileScreen() {
-  const user = useDataStore((state) => state.user);
+  const user = useDataStore((s) => s.user);
 
-  const pesoKg = toNumber(user.peso);
-  const alturaCm = toNumber(user.altura);
-  const idadeNum = toNumber(user.idade);
+  const pesoKg = toNumber(user?.peso);
+  const alturaCm = toNumber(user?.altura);
+  const idadeNum = toNumber(user?.idade);
 
   const imc = calcIMC(pesoKg, alturaCm);
   const imcClass = classifyIMC(imc ?? undefined);
-  const tmb = calcTMB(user.sexo, pesoKg, alturaCm, idadeNum);
+  const tmb = calcTMB(user?.sexo ?? "", pesoKg, alturaCm, idadeNum);
 
-  const {} = useQuery({
-    queryKey: ["profile"],
+  useQuery<Data>({
+    queryKey: ["profile", user?.email],
+    enabled: !!user?.email, // só executa quando tiver usuário
+    retry: false,
     queryFn: async () => {
-      try {
-        if (!user) {
-          throw new Error("Filed load profile");
-        }
-
-        const response = await api.post<ResponseData>("/profile", {
-          name: user.nome,
-          email: user.email,
-          password: user.senha,
-          age: user.idade,
-          weight: user.peso,
-          height: user.altura,
-          gender: user.sexo,
-          level: user.atividade,
-          objective: user.objetivo,
-        });
-
-        return response.data.data;
-      } catch (error) {
-        console.log(error);
-      }
+      const resp = await apiApp.post<ResponseData>("/profile", {
+        name: user!.nome,
+        email: user!.email,
+        password: user!.senha,
+        age: toNumber(user!.idade),
+        weight: toNumber(user!.peso),
+        height: toNumber(user!.altura),
+        gender: user!.sexo,
+        level: user!.atividade,
+        objective: user!.objetivo,
+      });
+      return resp.data.data; // nunca undefined
     },
   });
 
   return (
     <View style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header com logo + título */}
         <View style={styles.header}>
           <Image
             source={require("../assets/images/horusNew.png")}
@@ -97,39 +84,34 @@ export default function ProfileScreen() {
 
         <View style={styles.profileBox}>
           <Text style={styles.subtitle}>Informações Pessoais</Text>
-
           <View style={styles.card}>
             <Text style={styles.label}>Nome:</Text>
-            <Text style={styles.value}>{user.nome}</Text>
+            <Text style={styles.value}>{user?.nome}</Text>
           </View>
-
           <View style={styles.card}>
             <Text style={styles.label}>Sexo:</Text>
-            <Text style={styles.valueStatic}>{user.sexo}</Text>
+            <Text style={styles.valueStatic}>{user?.sexo}</Text>
           </View>
         </View>
 
         <View style={styles.profileBox}>
           <Text style={styles.subtitle}>Dados Corporais</Text>
-
           <View style={styles.card}>
             <Text style={styles.label}>Idade:</Text>
-            <Text style={styles.value}>{user.idade} anos</Text>
+            <Text style={styles.value}>{user?.idade} anos</Text>
           </View>
-
           <View style={styles.card}>
             <Text style={styles.label}>Peso:</Text>
-            <Text style={styles.value}>{user.peso} kg's</Text>
+            <Text style={styles.value}>{user?.peso} kg's</Text>
           </View>
-
           <View style={styles.card}>
             <Text style={styles.label}>Altura:</Text>
-            <Text style={styles.value}>{user.altura} cm's</Text>
+            <Text style={styles.value}>{user?.altura} cm's</Text>
           </View>
 
           <View style={styles.cardStatic}>
             <Text style={styles.label}>IMC:</Text>
-            <View style={{ display: "flex", flexDirection: "row" }}>
+            <View style={{ flexDirection: "row" }}>
               <Text style={styles.valueStatic}>
                 {imc !== null ? imc.toFixed(2) : "--"}
               </Text>
@@ -158,28 +140,12 @@ export default function ProfileScreen() {
   );
 }
 
+// styles iguais aos seus…
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  container: {
-    padding: 20,
-    flexGrow: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-    position: "absolute",
-    top: 25,
-    left: 5,
-  },
+  wrapper: { flex: 1, backgroundColor: "#000" },
+  container: { padding: 20, flexGrow: 1 },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
+  logo: { width: 60, height: 60, position: "absolute", top: 25, left: 5 },
   title: {
     flex: 1,
     fontSize: 26,
@@ -188,16 +154,8 @@ const styles = StyleSheet.create({
     marginTop: 40,
     textAlign: "center",
   },
-  profileBox: {
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#5692B7",
-    marginBottom: 12,
-    marginLeft: 4,
-  },
+  profileBox: { marginBottom: 5 },
+  subtitle: { fontSize: 18, fontWeight: "600", color: "#5692B7", marginBottom: 12, marginLeft: 4 },
   card: {
     backgroundColor: "#000",
     borderRadius: 12,
@@ -224,19 +182,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  label: {
-    fontSize: 18,
-    color: "#5692B7",
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  valueStatic: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-  },
+  label: { fontSize: 18, color: "#5692B7", marginBottom: 4 },
+  value: { fontSize: 18, fontWeight: "600", color: "#fff" },
+  valueStatic: { fontSize: 18, fontWeight: "bold", color: "#fff" },
 });

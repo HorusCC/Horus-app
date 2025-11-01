@@ -1,11 +1,10 @@
 // app/(tabs)/GenerateDiet.tsx
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Image,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -13,42 +12,89 @@ import { useDataStore } from "@/store/data";
 import { apiIA } from "../../services/api";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useQuery } from "@tanstack/react-query";
-import { Data } from "../../types/data";
 import { Link } from "expo-router";
 
-interface ResponseData {
-  data: Data;
-}
+type Refeicao = {
+  nome: string;
+  horario: string;
+  alimentos: string[];
+};
+
+type DietaResponse = {
+  nome: string;
+  sexo?: string;
+  idade?: number;
+  altura?: number;
+  peso?: number;
+  objetivo: string;
+  refeicoes: Refeicao[];
+  suplementos: string[];
+};
+
+const toNumber = (v?: string) =>
+  Number(String(v ?? "").replace(/[^\d.,-]/g, "").replace(",", "."));
+
+const mapObjetivo = (v?: string) => {
+  // normaliza valores comuns que você usa no app
+  switch ((v || "").toLowerCase()) {
+    case "emagrecimento":
+    case "emagrecer":
+      return "emagrecer";
+    case "manutenção":
+    case "manutencao":
+      return "manutencao";
+    case "ganho_massa":
+    case "ganhar_massa":
+    case "ganho de massa muscular":
+      return "ganhar_massa";
+    case "engordar":
+      return "engordar";
+    default:
+      return v || "manutencao";
+  }
+};
 
 export default function GenerateDiet() {
   const user = useDataStore((state) => state.user);
-  const { colors, theme } = useTheme();
+  const { colors } = useTheme();
 
   const { data, isFetching, error } = useQuery({
-    queryKey: ["diet"],
-    queryFn: async () => {
-      try {
-        if (!user) {
-          throw new Error("Filed load diet");
-        }
+    queryKey: ["diet", user?.email],
+    enabled: !!user, // só chama se tiver user
+    queryFn: async (): Promise<DietaResponse> => {
+      if (!user) throw new Error("Usuário não encontrado no estado.");
 
-        const response = await apiIA.post<ResponseData>("/create", {
-          name: user.nome,
-          email: user.email,
-          password: user.senha,
-          age: user.idade,
-          weight: user.peso,
-          height: user.altura,
-          gender: user.sexo,
-          level: user.atividade,
-          objective: user.objetivo,
-        });
+      const idade = toNumber(user.idade);
+      const altura = toNumber(user.altura);
+      const peso = toNumber(user.peso);
+      const objetivo = mapObjetivo(user.objetivo);
 
-        return response.data.data;
-      } catch (error) {
-        console.log(error);
-        throw error;
-      }
+      // payload em PT (o que o backend da IA usa) + espelho em EN (não atrapalha)
+      const payload = {
+        // ---- PT (principais) ----
+        nome: user.nome,
+        sexo: user.sexo,
+        idade,
+        altura,
+        peso,
+        objetivo,
+
+        // ---- EN (espelho/compatibilidade) ----
+        name: user.nome,
+        gender: user.sexo,
+        age: idade,
+        height: altura,
+        weight: peso,
+        objective: objetivo,
+
+        // extras (se o controller usar)
+        level: user.atividade,
+        email: user.email,
+      };
+
+      const res = await apiIA.post<{ data: DietaResponse }>("/create", payload);
+      // o controller devolve { data: ... }
+      return res.data.data;
     },
   });
 
@@ -65,11 +111,9 @@ export default function GenerateDiet() {
       <View style={styles.loading}>
         <Text style={styles.loadingText}>Falha ao gerar Dieta</Text>
         <Link href={"/home"}>
-          <Text style={styles.loading}>Tente novamente</Text>
+          <Text style={styles.loadingText}>Tente novamente</Text>
         </Link>
-        <Text>
-          <Ionicons name="close" size={60} color={"red"} />
-        </Text>
+        <Ionicons name="close" size={60} color={"red"} />
       </View>
     );
   }
@@ -100,43 +144,37 @@ export default function GenerateDiet() {
               style={[styles.foods, { backgroundColor: colors.backgroundDiet }]}
             >
               <View style={styles.foods}>
-                {data.refeicoes.map((refeicao) => (
+                {data.refeicoes?.map((refeicao) => (
                   <View
                     style={[
                       styles.food,
-                      {
-                        backgroundColor: colors.cardItemDiet,
-                      },
+                      { backgroundColor: colors.cardItemDiet },
                     ]}
-                    key={refeicao.nome}
+                    key={refeicao.nome + refeicao.horario}
                   >
                     <View style={styles.foodHeader}>
                       <Text
                         style={[
-                          styles.foodContent,
+                          styles.foodContentText,
                           { color: colors.text, fontWeight: "bold" },
                         ]}
                       >
                         {refeicao.nome}
                       </Text>
-                      <Ionicons
-                        name="restaurant"
-                        size={22}
-                        color={colors.text}
-                      />
+                      <Ionicons name="restaurant" size={22} color={colors.text} />
                     </View>
-                    <View style={styles.foodContent}>
+
+                    <View style={styles.foodContentRow}>
                       <Feather name="clock" size={20} color={colors.text} />
-                      <Text
-                        style={[styles.foodContent, { color: colors.text }]}
-                      >
+                      <Text style={[styles.foodContentText, { color: colors.text }]}>
                         Horário: {refeicao.horario}
                       </Text>
                     </View>
+
                     <Text style={[styles.foodText, { color: colors.text }]}>
                       Alimentos:
                     </Text>
-                    {refeicao.alimentos.map((alimento) => (
+                    {refeicao.alimentos?.map((alimento) => (
                       <Text
                         key={alimento}
                         style={[styles.foodTextItem, { color: colors.text }]}
@@ -148,6 +186,7 @@ export default function GenerateDiet() {
                 ))}
               </View>
             </ScrollView>
+
             <View
               style={[
                 styles.foodsSuplement,
@@ -155,24 +194,20 @@ export default function GenerateDiet() {
               ]}
             >
               <Text style={[styles.titleSuplement, { color: colors.text }]}>
-                Suplementos:{" "}
+                Suplementos:
               </Text>
-              {data.suplementos.map((suplementos) => (
-                <View key={suplementos}>
-                  <Text
-                    style={[
-                      styles.foodSuplementItems,
-                      { color: colors.text, paddingHorizontal: 2 },
-                    ]}
-                  >
-                    •{suplementos};
-                  </Text>
-                </View>
+              {data.suplementos?.map((s) => (
+                <Text
+                  key={s}
+                  style={[styles.foodSuplementItems, { color: colors.text }]}
+                >
+                  • {s}
+                </Text>
               ))}
             </View>
           </>
         )}
-        <Text></Text>
+        <Text />
       </ScrollView>
     </View>
   );
@@ -195,43 +230,6 @@ const styles = StyleSheet.create({
     color: "#0057C9",
     marginBottom: 20,
   },
-  generateButton: {
-    flexDirection: "row",
-    backgroundColor: "#000",
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#0057C9",
-  },
-  generateButtonText: {
-    color: "#0057C9",
-    fontWeight: "bold",
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  mealCard: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#0057C9",
-  },
-  mealTitle: {
-    color: "#36A2EB",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
-  mealItems: {
-    color: "#fff",
-    fontSize: 14,
-  },
   loading: {
     flex: 1,
     backgroundColor: "rgba(180, 180, 180, 1)",
@@ -242,52 +240,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "white",
     marginBottom: 4,
-    justifyContent: "center",
     fontWeight: "bold",
+    textAlign: "center",
   },
-  name: {
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  objective: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  foods: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 8,
-  },
-  food: {
-    borderRadius: 8,
-    padding: 8,
-  },
+  name: { fontSize: 18, fontWeight: "800" },
+  objective: { fontSize: 16, marginBottom: 20 },
+  label: { fontSize: 22, fontWeight: "bold", marginBottom: 12 },
+  foods: { paddingHorizontal: 4, paddingVertical: 4, borderRadius: 8, gap: 8 },
+  food: { borderRadius: 8, padding: 8 },
   foodHeader: {
-    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    flexDirection: "row",
-    alignItems: "center",
   },
-  foodContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  foodText: {
-    fontSize: 16,
-    marginBottom: 4,
-    marginTop: 10,
-    fontWeight: "bold",
-  },
-  foodTextItem: {
-    marginLeft: 4,
-  },
+  foodContentRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  foodContentText: { fontSize: 16 },
+  foodText: { fontSize: 16, marginBottom: 4, marginTop: 10, fontWeight: "bold" },
+  foodTextItem: { marginLeft: 4 },
   foodsSuplement: {
     marginTop: 5,
     borderRadius: 8,
@@ -295,13 +264,6 @@ const styles = StyleSheet.create({
     borderColor: "#008f0cff",
     borderWidth: 2,
   },
-  titleSuplement: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  foodSuplementItems: {
-    fontSize: 16,
-    paddingHorizontal: 4,
-  },
+  titleSuplement: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
+  foodSuplementItems: { fontSize: 16, paddingHorizontal: 4 },
 });

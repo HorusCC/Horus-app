@@ -6,8 +6,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
-  TouchableOpacity,
   Pressable,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -39,12 +37,16 @@ export default function LoginPage() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
+    formState: { errors },
+    setValue,
+    getValues,
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
   });
 
-  const user = useDataStore((s) => s.user);
+  // se você tiver setUser no seu store, use aqui:
+  // const setUser = useDataStore((s) => s.setUser);
   const setPageOne = useDataStore((state) => state.setPageOne);
 
   async function handleCreate(data: FormData) {
@@ -54,9 +56,30 @@ export default function LoginPage() {
     try {
       // chama o backend: POST /api/users/login
       const res = await apiApp.post("/users/login", { email, password });
-      const { user } = res.data;
 
-      // opcional: salva "lembrar-me"
+      // esperamos { token, user } do backend
+      const token: string | undefined = res?.data?.token;
+      const user = res?.data?.user;
+
+      if (!token) {
+        Toast.show({
+          type: "error",
+          text1: "Erro no login",
+          text2: "Resposta sem token. Verifique o backend.",
+        });
+        return;
+      }
+
+      // injeta Authorization para as próximas requisições
+      apiApp.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+      // persiste token (e opcionalmente o user) no AsyncStorage
+      await AsyncStorage.setItem("@auth_token", token);
+      if (user) {
+        await AsyncStorage.setItem("@auth_user", JSON.stringify(user));
+      }
+
+      // "Lembrar-me"
       if (isSelected) {
         await AsyncStorage.setItem(
           "@remember_login",
@@ -66,6 +89,7 @@ export default function LoginPage() {
         await AsyncStorage.removeItem("@remember_login");
       }
 
+      // guarda no seu store atual (mantive seu padrão)
       setPageOne({ email, senha: password });
 
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
@@ -80,18 +104,25 @@ export default function LoginPage() {
     }
   }
 
+  // carrega "lembrar-me" ao abrir a tela
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem("@remember_login");
-      if (saved) {
-        try {
+      try {
+        const saved = await AsyncStorage.getItem("@remember_login");
+        if (saved) {
           const { email, password } = JSON.parse(saved);
-          // se seus <Input> são controlados pelo RHF, setValue; se forem locais, setState:
-          // setValue("email", email); setValue("password", password);
-        } catch {}
-      }
+          setValue("email", email);
+          setValue("password", password);
+          setSelection(true);
+        }
+        // se já existir token salvo, configura o header (login persistido)
+        const savedToken = await AsyncStorage.getItem("@auth_token");
+        if (savedToken) {
+          apiApp.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
+        }
+      } catch {}
     })();
-  }, []);
+  }, [setValue]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -161,7 +192,6 @@ export default function LoginPage() {
           </Text>
         </View>
 
-        {/* Botão de esqueci a senha */}
         <Pressable onPress={() => router.push("/forgot")}>
           <Text style={[styles.textForgot, { color: colors.text }]}>
             Esqueci a senha
@@ -192,79 +222,17 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 25,
-  },
-  containerSenha: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  image: {
-    height: 250,
-    alignSelf: "center",
-    resizeMode: "contain",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    marginBottom: 15,
-  },
-  checkbox: {
-    alignSelf: "center",
-  },
-  resetPassword: {
-    textAlign: "right",
-    fontWeight: "500",
-    color: "#5692B7",
-    marginBottom: 20,
-  },
-  button: {
-    marginBottom: 20,
-    borderRadius: 10,
-  },
-  dontHaveAccount: {
-    textAlign: "right",
-  },
-  register: {
-    fontWeight: "500",
-  },
-  label: {
-    marginHorizontal: 8,
-  },
-  labelSecundary: {
-    fontSize: 16,
-    fontWeight: "500",
-    textAlign: "center",
-    marginHorizontal: 8,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#5692B7",
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-    backgroundColor: "#fff",
-  },
-  icon: {
-    marginRight: 4,
-  },
-  textForgot: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
+  container: { flex: 1, justifyContent: "center", paddingHorizontal: 25 },
+  containerSenha: { flexDirection: "row", justifyContent: "space-around" },
+  image: { height: 250, alignSelf: "center", resizeMode: "contain" },
+  title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
+  subtitle: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 10, marginTop: 10 },
+  checkboxContainer: { flexDirection: "row", marginBottom: 15 },
+  checkbox: { alignSelf: "center" },
+  button: { marginBottom: 20, borderRadius: 10 },
+  register: { fontWeight: "500" },
+  labelSecundary: { fontSize: 16, fontWeight: "500", textAlign: "center", marginHorizontal: 8 },
+  inputContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#5692B7", paddingHorizontal: 10, borderRadius: 5, marginBottom: 10, backgroundColor: "#fff" },
+  icon: { marginRight: 4 },
+  textForgot: { fontWeight: "600", fontSize: 16 },
 });
