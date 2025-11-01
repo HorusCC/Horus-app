@@ -86,8 +86,6 @@ export default function LoginPage() {
       if (saved) {
         try {
           const { email, password } = JSON.parse(saved);
-          // se seus <Input> são controlados pelo RHF, setValue; se forem locais, setState:
-          // setValue("email", email); setValue("password", password);
         } catch {}
       }
     })();

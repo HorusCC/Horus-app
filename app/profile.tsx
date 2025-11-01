@@ -15,6 +15,7 @@ import { Data } from "../types/data";
 import { apiApp } from "../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useEffect } from "react";
+import { TextInput, ActivityIndicator } from "react-native";
 interface ResponseData {
   data: Data;
 }
@@ -105,6 +106,104 @@ export default function ProfileScreen() {
     });
   }, [data, setPageTwo, user.email]);
 
+  const userId = (data as any)?._id as string | undefined;
+
+  function EditableField({
+    label,
+    value,
+    unit,
+    payloadKey,
+  }: {
+    label: string;
+    value: string;
+    unit?: string;
+    payloadKey: "age" | "weight" | "height";
+  }) {
+    const [editing, setEditing] = React.useState(false);
+    const [local, setLocal] = React.useState(value);
+    const [loading, setLoading] = React.useState(false);
+
+    React.useEffect(() => setLocal(value), [value]);
+
+    async function save() {
+      if (!userId) return;
+      const num = Number(
+        String(local)
+          .replace(/[^\d.,-]/g, "")
+          .replace(",", ".")
+      );
+      setLoading(true);
+      try {
+        await apiApp.patch(`/users/${userId}`, { [payloadKey]: num });
+        if (payloadKey === "age") setPageTwo({ idade: String(num) });
+        if (payloadKey === "weight") setPageTwo({ peso: String(num) });
+        if (payloadKey === "height") setPageTwo({ altura: String(num) });
+        setEditing(false);
+      } catch (e) {
+        console.log("PATCH failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return (
+      <View>
+        <View
+          style={{
+            flexDirection: "row",
+          }}
+        >
+          {!editing ? (
+            <Pressable
+              accessibilityLabel="Editar"
+              onPress={() => setEditing(true)}
+            >
+              <MaterialIcons name="edit" size={21} color="#5692B7" />
+            </Pressable>
+          ) : (
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+            >
+              {loading && <ActivityIndicator />}
+              <Pressable
+                onPress={() => {
+                  setLocal(value);
+                  setEditing(false);
+                }}
+              >
+                <Text style={{ color: "#9CA3AF" }}>Cancelar</Text>
+              </Pressable>
+              <Pressable onPress={save}>
+                <Text style={{ color: "#5692B7", fontWeight: "700" }}>
+                  Salvar
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {!editing ? (
+          <Text>
+            {value} {unit}
+          </Text>
+        ) : (
+          <TextInput
+            value={local}
+            onChangeText={setLocal}
+            keyboardType="numeric"
+            style={{
+              borderWidth: 1,
+              borderColor: "#5692B7",
+              borderRadius: 8,
+              color: "#fff",
+              fontSize: 18,
+            }}
+          />
+        )}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -140,18 +239,10 @@ export default function ProfileScreen() {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
               }}
             >
               <Text style={styles.label}>Idade:</Text>
-              <Pressable accessibilityLabel="Editar">
-                <MaterialIcons
-                  name="edit"
-                  size={25}
-                  color="#5692B7"
-                  style={styles.icon}
-                />
-              </Pressable>
+              <EditableField label="Idade" payloadKey="age" />
             </View>
             <Text style={styles.value}>{user.idade} anos</Text>
           </View>
@@ -161,18 +252,10 @@ export default function ProfileScreen() {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
               }}
             >
               <Text style={styles.label}>Peso:</Text>
-              <Pressable accessibilityLabel="Editar">
-                <MaterialIcons
-                  name="edit"
-                  size={25}
-                  color="#5692B7"
-                  style={styles.icon}
-                />
-              </Pressable>
+              <EditableField label="Peso" payloadKey="weight" />
             </View>
             <Text style={styles.value}>{user.peso} kg's</Text>
           </View>
@@ -182,18 +265,10 @@ export default function ProfileScreen() {
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                alignItems: "center",
               }}
             >
               <Text style={styles.label}>Altura:</Text>
-              <Pressable accessibilityLabel="Editar">
-                <MaterialIcons
-                  name="edit"
-                  size={25}
-                  color="#5692B7"
-                  style={styles.icon}
-                />
-              </Pressable>
+              <EditableField label="Altura" payloadKey="height" />
             </View>
             <Text style={styles.value}>{user.altura} cm's</Text>
           </View>
@@ -301,9 +376,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   value: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     color: "#fff",
+    display: "flex",
+    justifyContent: "center",
   },
   valueStatic: {
     fontSize: 18,

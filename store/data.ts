@@ -15,20 +15,7 @@ export type User = {
 type DataState = {
   user: User;
   setPageOne: (data: Pick<User, "email" | "senha">) => void;
-  setPageTwo: (
-    data: Pick<
-      User,
-      | "nome"
-      | "email"
-      | "senha"
-      | "idade"
-      | "altura"
-      | "peso"
-      | "sexo"
-      | "atividade"
-      | "objetivo"
-    >
-  ) => void;
+  setPageTwo: (data: Partial<User>) => void; // <-- aqui
 };
 
 export const useDataStore = create<DataState>((set) => ({
