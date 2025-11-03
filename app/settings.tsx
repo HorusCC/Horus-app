@@ -21,7 +21,7 @@ export default function SettingsScreen() {
       <Text style={[styles.header, { color: "#0057C9" }]}>Configurações</Text>
 
       {/* Alterar senha */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[styles.optionRow, { backgroundColor: "#000", borderColor }]}
         onPress={() => router.push("/change-password")}
       >
@@ -32,7 +32,7 @@ export default function SettingsScreen() {
           </Text>
         </View>
         <Ionicons name="chevron-forward-outline" size={20} color="#999" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Privacidade */}
       <TouchableOpacity
