@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 const DEV_HOST =
   Platform.OS === "android"
-    ? "http://192.168.192.186:8080"
+    ? "http://192.168.15.3:8080"
     : "http://localhost:8080";
 
 const PROD_HOST = DEV_HOST;
