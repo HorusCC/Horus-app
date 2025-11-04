@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
@@ -52,11 +53,9 @@ export default function LoginPage() {
     const password = data.password;
 
     try {
-      // chama o backend: POST /api/users/login
       const res = await apiApp.post("/users/login", { email, password });
       const { user } = res.data;
 
-      // opcional: salva "lembrar-me"
       if (isSelected) {
         await AsyncStorage.setItem(
           "@remember_login",
@@ -71,12 +70,28 @@ export default function LoginPage() {
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
       router.replace("/(tabs)/home");
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ??
-        (err?.response?.status === 401
-          ? "Credenciais inválidas"
-          : "Falha ao entrar");
-      Toast.show({ type: "error", text1: "Erro no login", text2: msg });
+      console.log("🔥 ERRO COMPLETO:", err); // <-- Mostra tudo no console
+      console.log("📩 RESPONSE:", err?.response?.data); // <-- Mostra resposta do backend
+
+      const status = err?.response?.status;
+      const backendMsg = err?.response?.data?.message;
+
+      let msg = "Erro desconhecido";
+      if (backendMsg) msg = backendMsg;
+      else if (status === 401) msg = "Credenciais inválidas";
+      else if (status === 404) msg = "Usuário não encontrado";
+      else if (status === 500) msg = "Erro interno no servidor";
+      else if (err.message.includes("Network"))
+        msg = "Falha de conexão com o servidor";
+
+      Toast.show({
+        type: "error",
+        text1: "Erro no login",
+        text2: msg,
+      });
+
+      // opcional: alert para debug
+      Alert.alert("Erro no login", msg);
     }
   }
 

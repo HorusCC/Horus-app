@@ -6,7 +6,7 @@ const DEV_HOST =
     ? "http://192.168.15.2:8080"
     : "http://localhost:8080";
 
-const PROD_HOST = "http://26.38.143.141:8080";
+const PROD_HOST = DEV_HOST;
 
 // Alterna automaticamente conforme ambiente:
 const HOST = __DEV__ ? DEV_HOST : PROD_HOST;
