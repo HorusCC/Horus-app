@@ -2,7 +2,9 @@ import axios from "axios";
 import { Platform } from "react-native";
 
 const DEV_HOST =
-  Platform.OS === "android" ? "http://10.0.2.2:8080" : "http://localhost:8080";
+  Platform.OS === "android"
+    ? "http://192.168.15.2:8080"
+    : "http://localhost:8080";
 
 const PROD_HOST = "http://26.38.143.141:8080";
 
