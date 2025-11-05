@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "react": "^19.2.0",
+    "react-native": "^0.82.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-native": "^0.72.8"
+  }
+}
