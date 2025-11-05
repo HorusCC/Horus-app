@@ -13,25 +13,39 @@ import { apiApp } from "@/services/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSend = async () => {
-    if (!email) {
+    const emailClean = email.trim().toLowerCase();
+
+    if (!emailClean) {
       Alert.alert("Erro", "Por favor, insira seu email.");
       return;
     }
 
+    setLoading(true);
     try {
-      await apiApp.post("/users/forgot-password", { email });
+      const res = await apiApp.post("/users/forgot-password", {
+        email: emailClean,
+      });
+
       Alert.alert(
         "Sucesso",
-        "Um link de redefinição foi enviado para seu email."
+        res.data?.message ||
+          "Um link de redefinição foi enviado para seu email."
       );
+
+      router.push("/login");
     } catch (err: any) {
-      Alert.alert(
+      console.log("Erro forgot-password:", err?.response?.data || err.message);
+
+      const msg = Alert.alert(
         "Erro",
         err.response?.data?.message || "Falha ao enviar email"
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,8 +74,14 @@ export default function ForgotPasswordScreen() {
       />
 
       {/* Botão enviar */}
-      <TouchableOpacity style={styles.button} onPress={handleSend}>
-        <Text style={styles.buttonText}>Enviar</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSend}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Enviando..." : "Enviar"}
+        </Text>
       </TouchableOpacity>
 
       {/* Link para login */}
