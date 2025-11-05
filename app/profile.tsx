@@ -40,7 +40,7 @@ const calcTMB = (
 };
 
 export default function ProfileScreen() {
-  const user = useDataStore((s) => s.user);
+  const user = useDataStore((s: any) => s.user); // <- tipado aqui
 
   const pesoKg = toNumber(user?.peso);
   const alturaCm = toNumber(user?.altura);
@@ -52,7 +52,7 @@ export default function ProfileScreen() {
 
   useQuery<Data>({
     queryKey: ["profile", user?.email],
-    enabled: !!user?.email, // só executa quando tiver usuário
+    enabled: !!user?.email,
     retry: false,
     queryFn: async () => {
       const resp = await apiApp.post<ResponseData>("/profile", {
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
         level: user!.atividade,
         objective: user!.objetivo,
       });
-      return resp.data.data; // nunca undefined
+      return resp.data.data;
     },
   });
 
@@ -140,7 +140,6 @@ export default function ProfileScreen() {
   );
 }
 
-// styles iguais aos seus…
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: "#000" },
   container: { padding: 20, flexGrow: 1 },
@@ -155,7 +154,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   profileBox: { marginBottom: 5 },
-  subtitle: { fontSize: 18, fontWeight: "600", color: "#5692B7", marginBottom: 12, marginLeft: 4 },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#5692B7",
+    marginBottom: 12,
+    marginLeft: 4,
+  },
   card: {
     backgroundColor: "#000",
     borderRadius: 12,

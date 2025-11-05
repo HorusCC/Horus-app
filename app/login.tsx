@@ -45,19 +45,15 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  // se você tiver setUser no seu store, use aqui:
-  // const setUser = useDataStore((s) => s.setUser);
-  const setPageOne = useDataStore((state) => state.setPageOne);
+  const setPageOne = useDataStore((state: any) => state.setPageOne); // <- ajustado
 
   async function handleCreate(data: FormData) {
     const email = data.email.trim().toLowerCase();
     const password = data.password;
 
     try {
-      // chama o backend: POST /api/users/login
       const res = await apiApp.post("/users/login", { email, password });
 
-      // esperamos { token, user } do backend
       const token: string | undefined = res?.data?.token;
       const user = res?.data?.user;
 
@@ -70,16 +66,13 @@ export default function LoginPage() {
         return;
       }
 
-      // injeta Authorization para as próximas requisições
       apiApp.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-      // persiste token (e opcionalmente o user) no AsyncStorage
       await AsyncStorage.setItem("@auth_token", token);
       if (user) {
         await AsyncStorage.setItem("@auth_user", JSON.stringify(user));
       }
 
-      // "Lembrar-me"
       if (isSelected) {
         await AsyncStorage.setItem(
           "@remember_login",
@@ -89,7 +82,6 @@ export default function LoginPage() {
         await AsyncStorage.removeItem("@remember_login");
       }
 
-      // guarda no seu store atual (mantive seu padrão)
       setPageOne({ email, senha: password });
 
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
@@ -104,7 +96,6 @@ export default function LoginPage() {
     }
   }
 
-  // carrega "lembrar-me" ao abrir a tela
   useEffect(() => {
     (async () => {
       try {
@@ -115,7 +106,7 @@ export default function LoginPage() {
           setValue("password", password);
           setSelection(true);
         }
-        // se já existir token salvo, configura o header (login persistido)
+
         const savedToken = await AsyncStorage.getItem("@auth_token");
         if (savedToken) {
           apiApp.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
@@ -226,13 +217,33 @@ const styles = StyleSheet.create({
   containerSenha: { flexDirection: "row", justifyContent: "space-around" },
   image: { height: 250, alignSelf: "center", resizeMode: "contain" },
   title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
-  subtitle: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 10, marginTop: 10 },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 10,
+    marginTop: 10,
+  },
   checkboxContainer: { flexDirection: "row", marginBottom: 15 },
   checkbox: { alignSelf: "center" },
   button: { marginBottom: 20, borderRadius: 10 },
   register: { fontWeight: "500" },
-  labelSecundary: { fontSize: 16, fontWeight: "500", textAlign: "center", marginHorizontal: 8 },
-  inputContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#5692B7", paddingHorizontal: 10, borderRadius: 5, marginBottom: 10, backgroundColor: "#fff" },
+  labelSecundary: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    marginHorizontal: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#5692B7",
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
   icon: { marginRight: 4 },
   textForgot: { fontWeight: "600", fontSize: 16 },
 });

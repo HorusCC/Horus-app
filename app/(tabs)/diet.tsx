@@ -35,7 +35,6 @@ const toNumber = (v?: string) =>
   Number(String(v ?? "").replace(/[^\d.,-]/g, "").replace(",", "."));
 
 const mapObjetivo = (v?: string) => {
-  // normaliza valores comuns que você usa no app
   switch ((v || "").toLowerCase()) {
     case "emagrecimento":
     case "emagrecer":
@@ -55,13 +54,13 @@ const mapObjetivo = (v?: string) => {
 };
 
 export default function GenerateDiet() {
-  const user = useDataStore((state) => state.user);
+  const user = useDataStore((state: any) => state.user); // <- tipado
   const { colors } = useTheme();
 
-  const { data, isFetching, error } = useQuery({
+  const { data, isFetching, error } = useQuery<DietaResponse>({
     queryKey: ["diet", user?.email],
-    enabled: !!user, // só chama se tiver user
-    queryFn: async (): Promise<DietaResponse> => {
+    enabled: !!user,
+    queryFn: async () => {
       if (!user) throw new Error("Usuário não encontrado no estado.");
 
       const idade = toNumber(user.idade);
@@ -69,31 +68,24 @@ export default function GenerateDiet() {
       const peso = toNumber(user.peso);
       const objetivo = mapObjetivo(user.objetivo);
 
-      // payload em PT (o que o backend da IA usa) + espelho em EN (não atrapalha)
       const payload = {
-        // ---- PT (principais) ----
         nome: user.nome,
         sexo: user.sexo,
         idade,
         altura,
         peso,
         objetivo,
-
-        // ---- EN (espelho/compatibilidade) ----
         name: user.nome,
         gender: user.sexo,
         age: idade,
         height: altura,
         weight: peso,
         objective: objetivo,
-
-        // extras (se o controller usar)
         level: user.atividade,
         email: user.email,
       };
 
       const res = await apiIA.post<{ data: DietaResponse }>("/create", payload);
-      // o controller devolve { data: ... }
       return res.data.data;
     },
   });
@@ -166,7 +158,12 @@ export default function GenerateDiet() {
 
                     <View style={styles.foodContentRow}>
                       <Feather name="clock" size={20} color={colors.text} />
-                      <Text style={[styles.foodContentText, { color: colors.text }]}>
+                      <Text
+                        style={[
+                          styles.foodContentText,
+                          { color: colors.text },
+                        ]}
+                      >
                         Horário: {refeicao.horario}
                       </Text>
                     </View>
@@ -174,7 +171,7 @@ export default function GenerateDiet() {
                     <Text style={[styles.foodText, { color: colors.text }]}>
                       Alimentos:
                     </Text>
-                    {refeicao.alimentos?.map((alimento) => (
+                    {refeicao.alimentos?.map((alimento: string) => (
                       <Text
                         key={alimento}
                         style={[styles.foodTextItem, { color: colors.text }]}
@@ -196,7 +193,7 @@ export default function GenerateDiet() {
               <Text style={[styles.titleSuplement, { color: colors.text }]}>
                 Suplementos:
               </Text>
-              {data.suplementos?.map((s) => (
+              {data.suplementos?.map((s: string) => (
                 <Text
                   key={s}
                   style={[styles.foodSuplementItems, { color: colors.text }]}
@@ -255,7 +252,12 @@ const styles = StyleSheet.create({
   },
   foodContentRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   foodContentText: { fontSize: 16 },
-  foodText: { fontSize: 16, marginBottom: 4, marginTop: 10, fontWeight: "bold" },
+  foodText: {
+    fontSize: 16,
+    marginBottom: 4,
+    marginTop: 10,
+    fontWeight: "bold",
+  },
   foodTextItem: { marginLeft: 4 },
   foodsSuplement: {
     marginTop: 5,
