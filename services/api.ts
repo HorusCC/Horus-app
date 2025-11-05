@@ -6,7 +6,7 @@ const DEV_HOST =
     ? "http://192.168.15.3:8080"
     : "http://localhost:8080";
 
-const PROD_HOST = DEV_HOST;
+const PROD_HOST = "https://backendtcc-iikl.onrender.com";
 
 // Alterna automaticamente conforme ambiente:
 const HOST = __DEV__ ? DEV_HOST : PROD_HOST;
