@@ -17,7 +17,7 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-import { useMacro } from "@/app/contexts/MacroContext";
+import { useMacro } from "@/contexts/macroContext";
 import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
 import { macrosForServing, round1 } from "@/src/utils/nutrition";
 

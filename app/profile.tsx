@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
+import { apiApp } from "@/services/api";
 import { Data } from "../types/data";
 import { apiApp } from "../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -31,7 +32,7 @@ interface ResponseData {
 //   onLocalUpdate: (next: any) => void;
 // };
 
-const toNumber = (v?: string) =>
+const toNumber = (v?: string | number) =>
   Number(
     String(v ?? "")
       .replace(/[^\d.,-]/g, "")
@@ -70,13 +71,13 @@ export default function ProfileScreen() {
   const user = useDataStore((state) => state.user);
   const setPageTwo = useDataStore((s) => s.setPageTwo);
 
-  const pesoKg = toNumber(user.peso);
-  const alturaCm = toNumber(user.altura);
-  const idadeNum = toNumber(user.idade);
+  const pesoKg = toNumber(user?.peso);
+  const alturaCm = toNumber(user?.altura);
+  const idadeNum = toNumber(user?.idade);
 
   const imc = calcIMC(pesoKg, alturaCm);
   const imcClass = classifyIMC(imc ?? undefined);
-  const tmb = calcTMB(user.sexo, pesoKg, alturaCm, idadeNum);
+  const tmb = calcTMB(user?.sexo ?? "", pesoKg, alturaCm, idadeNum);
 
   const { data } = useQuery({
     queryKey: ["profile", user.email],
@@ -207,7 +208,6 @@ export default function ProfileScreen() {
   return (
     <View style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header com logo + título */}
         <View style={styles.header}>
           <Image
             source={require("../assets/images/horusNew.png")}
@@ -222,18 +222,17 @@ export default function ProfileScreen() {
 
           <View style={styles.cardStatic}>
             <Text style={styles.label}>Nome:</Text>
-            <Text style={styles.value}>{user.nome}</Text>
+            <Text style={styles.value}>{user?.nome}</Text>
           </View>
 
           <View style={styles.cardStatic}>
             <Text style={styles.label}>Sexo:</Text>
-            <Text style={styles.valueStatic}>{user.sexo}</Text>
+            <Text style={styles.valueStatic}>{user?.sexo}</Text>
           </View>
         </View>
 
         <View style={styles.profileBox}>
           <Text style={styles.subtitle}>Dados Corporais</Text>
-
           <View style={styles.card}>
             <View
               style={{
@@ -246,7 +245,6 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.value}>{user.idade} anos</Text>
           </View>
-
           <View style={styles.card}>
             <View
               style={{
@@ -259,7 +257,6 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.value}>{user.peso} kg's</Text>
           </View>
-
           <View style={styles.card}>
             <View
               style={{
@@ -275,7 +272,7 @@ export default function ProfileScreen() {
 
           <View style={styles.cardStatic}>
             <Text style={styles.label}>IMC:</Text>
-            <View style={{ display: "flex", flexDirection: "row" }}>
+            <View style={{ flexDirection: "row" }}>
               <Text style={styles.valueStatic}>
                 {imc !== null ? imc.toFixed(2) : "--"}
               </Text>
@@ -305,27 +302,10 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  container: {
-    padding: 20,
-    flexGrow: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-    position: "absolute",
-    top: 25,
-    left: 5,
-  },
+  wrapper: { flex: 1, backgroundColor: "#000" },
+  container: { padding: 20, flexGrow: 1 },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
+  logo: { width: 60, height: 60, position: "absolute", top: 25, left: 5 },
   title: {
     flex: 1,
     fontSize: 26,
@@ -334,9 +314,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     textAlign: "center",
   },
-  profileBox: {
-    marginBottom: 5,
-  },
+  profileBox: { marginBottom: 5 },
   subtitle: {
     fontSize: 18,
     fontWeight: "600",
