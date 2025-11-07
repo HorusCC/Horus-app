@@ -13,7 +13,6 @@ import { useDataStore } from "@/store/data";
 import { useQuery } from "@tanstack/react-query";
 import { apiApp } from "@/services/api";
 import { Data } from "../types/data";
-import { apiApp } from "../services/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useEffect } from "react";
 import { TextInput, ActivityIndicator } from "react-native";
