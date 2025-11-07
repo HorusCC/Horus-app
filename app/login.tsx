@@ -1,14 +1,7 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-  Alert,
-} from "react-native";
+import { Image, StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useEffect, useState } from "react";
@@ -103,7 +96,11 @@ export default function LoginPage() {
         const saved = await AsyncStorage.getItem("@remember_login");
         if (saved) {
           const { email, password } = JSON.parse(saved);
-        } catch {}
+          setValue("email", email);
+          setValue("password", password);
+        }
+      } catch (error) {
+        console.log("Erro ao recuperar credenciais:", error);
       }
     })();
   }, [setValue]);
