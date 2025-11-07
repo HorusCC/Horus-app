@@ -1,16 +1,7 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Pressable,
-  Alert,
-} from "react-native";
+import { Image, StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useEffect, useState } from "react";
@@ -40,13 +31,15 @@ export default function LoginPage() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
+    formState: { errors },
+    setValue,
+    getValues,
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
   });
 
-  const user = useDataStore((s) => s.user);
-  const setPageOne = useDataStore((state) => state.setPageOne);
+  const setPageOne = useDataStore((state: any) => state.setPageOne); // <- ajustado
 
   async function handleCreate(data: FormData) {
     const email = data.email.trim().toLowerCase();
@@ -54,7 +47,9 @@ export default function LoginPage() {
 
     try {
       const res = await apiApp.post("/users/login", { email, password });
-      const { user } = res.data;
+
+      const token: string | undefined = res?.data?.token;
+      const user = res?.data?.user;
 
       if (isSelected) {
         await AsyncStorage.setItem(
@@ -97,14 +92,18 @@ export default function LoginPage() {
 
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem("@remember_login");
-      if (saved) {
-        try {
+      try {
+        const saved = await AsyncStorage.getItem("@remember_login");
+        if (saved) {
           const { email, password } = JSON.parse(saved);
-        } catch {}
+          setValue("email", email);
+          setValue("password", password);
+        }
+      } catch (error) {
+        console.log("Erro ao recuperar credenciais:", error);
       }
     })();
-  }, []);
+  }, [setValue]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -174,7 +173,6 @@ export default function LoginPage() {
           </Text>
         </View>
 
-        {/* Botão de esqueci a senha */}
         <Pressable onPress={() => router.push("/forgot")}>
           <Text style={[styles.textForgot, { color: colors.text }]}>
             Esqueci a senha
@@ -205,25 +203,10 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 25,
-  },
-  containerSenha: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  image: {
-    height: 250,
-    alignSelf: "center",
-    resizeMode: "contain",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "500",
-    textAlign: "center",
-  },
+  container: { flex: 1, justifyContent: "center", paddingHorizontal: 25 },
+  containerSenha: { flexDirection: "row", justifyContent: "space-around" },
+  image: { height: 250, alignSelf: "center", resizeMode: "contain" },
+  title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
   subtitle: {
     fontSize: 18,
     fontWeight: "700",
@@ -231,32 +214,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
   },
-  checkboxContainer: {
-    flexDirection: "row",
-    marginBottom: 15,
-  },
-  checkbox: {
-    alignSelf: "center",
-  },
-  resetPassword: {
-    textAlign: "right",
-    fontWeight: "500",
-    color: "#5692B7",
-    marginBottom: 20,
-  },
-  button: {
-    marginBottom: 20,
-    borderRadius: 10,
-  },
-  dontHaveAccount: {
-    textAlign: "right",
-  },
-  register: {
-    fontWeight: "500",
-  },
-  label: {
-    marginHorizontal: 8,
-  },
+  checkboxContainer: { flexDirection: "row", marginBottom: 15 },
+  checkbox: { alignSelf: "center" },
+  button: { marginBottom: 20, borderRadius: 10 },
+  register: { fontWeight: "500" },
   labelSecundary: {
     fontSize: 16,
     fontWeight: "500",
@@ -273,11 +234,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
   },
-  icon: {
-    marginRight: 4,
-  },
-  textForgot: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
+  icon: { marginRight: 4 },
+  textForgot: { fontWeight: "600", fontSize: 16 },
 });
