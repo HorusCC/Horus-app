@@ -13,10 +13,10 @@ export default function PrivacyScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingVertical: 30 }}
     >
-      <Text style={styles.header}>Privacidade e Permissões</Text>
+      <Text style={styles.header}>Privacidade</Text>
 
       {/* Compartilhar dados */}
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.label}>Permitir Bluetooth</Text>
         <Switch
           value={shareData}
@@ -24,10 +24,10 @@ export default function PrivacyScreen() {
           thumbColor={shareData ? "#0057C9" : "#ccc"}
           trackColor={{ false: "#767577", true: "#80BFFF" }}
         />
-      </View>
+      </View> */}
 
       {/* Notificações */}
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.label}>Receber notificações</Text>
         <Switch
           value={notifications}
@@ -35,10 +35,10 @@ export default function PrivacyScreen() {
           thumbColor={notifications ? "#0057C9" : "#ccc"}
           trackColor={{ false: "#767577", true: "#80BFFF" }}
         />
-      </View>
+      </View> */}
 
       {/* Permissão de localização */}
-      <View style={styles.card}>
+      {/* <View style={styles.card}>
         <Text style={styles.label}>Permissão de localização</Text>
         <Switch
           value={locationPermission}
@@ -46,7 +46,7 @@ export default function PrivacyScreen() {
           thumbColor={locationPermission ? "#0057C9" : "#ccc"}
           trackColor={{ false: "#767577", true: "#80BFFF" }}
         />
-      </View>
+      </View> */}
 
       {/* Política de privacidade */}
       <View style={styles.card}>
