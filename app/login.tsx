@@ -40,6 +40,7 @@ export default function LoginPage() {
   });
 
   const setPageOne = useDataStore((state: any) => state.setPageOne); // <- ajustado
+  const setPageTwo = useDataStore((state: any) => state.setPageTwo);
 
   async function handleCreate(data: FormData) {
     const email = data.email.trim().toLowerCase();
@@ -61,6 +62,16 @@ export default function LoginPage() {
       }
 
       setPageOne({ email, senha: password });
+      setPageTwo({
+        nome: user.name,
+        email: user.email,
+        idade: String(user.age),
+        altura: String(user.height),
+        peso: String(user.weight),
+        sexo: user.gender,
+        objetivo: user.objective,
+        atividade: user.level,
+      });
 
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
       router.replace("/(tabs)/home");
