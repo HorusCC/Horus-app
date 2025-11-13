@@ -2,12 +2,12 @@ import { Stack } from "expo-router";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import { StatusBar } from "expo-status-bar";
-import { MacroProvider } from "@/contexts/macroContext";
+import { MacroProvider } from "./contexts/MacroContext";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
-const queryClient = new QueryClient();
-
 export default function RootLayout() {
+  const queryClient = new QueryClient();
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
