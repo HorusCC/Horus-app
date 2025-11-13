@@ -22,6 +22,7 @@ interface ResponseData {
 
 export default function GenerateDiet() {
   const user = useDataStore((state) => state.user);
+  console.log("Dados do usuário na tela de dieta:", user);
   const { colors, theme } = useTheme();
 
   const { data, isFetching, error } = useQuery({
@@ -43,6 +44,8 @@ export default function GenerateDiet() {
           level: user.atividade,
           objective: user.objetivo,
         });
+
+        console.log("Resposta da API na tela de dieta:", response.data);
 
         return response.data.data;
       } catch (error) {
