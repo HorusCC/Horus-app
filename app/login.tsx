@@ -1,15 +1,7 @@
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { router } from "expo-router";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Pressable,
-} from "react-native";
+import { Image, StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import { useEffect, useState } from "react";
@@ -19,6 +11,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useDataStore } from "@/store/data";
+import { apiApp } from "@/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const schema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -37,42 +31,79 @@ export default function LoginPage() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
+    formState: { errors },
+    setValue,
+    getValues,
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
   });
 
-  const user = useDataStore((s) => s.user);
-  const setPageOne = useDataStore((state) => state.setPageOne);
+  const setPageOne = useDataStore((state: any) => state.setPageOne); // <- ajustado
 
-  function handleCreate(data: FormData) {
+  async function handleCreate(data: FormData) {
     const email = data.email.trim().toLowerCase();
     const password = data.password;
 
-    if (!user.email || !user.senha) {
-      Toast.show({
-        type: "error",
-        text1: "Nenhum usuário cadastrado",
-        text2: "Faça seu cadastro antes de entrar",
-      });
-      return;
-    }
+    try {
+      const res = await apiApp.post("/users/login", { email, password });
 
-    const isValid =
-      user.email.trim().toLowerCase() === email && user.senha === password;
+      const token: string | undefined = res?.data?.token;
+      const user = res?.data?.user;
 
-    if (isValid) {
+      if (isSelected) {
+        await AsyncStorage.setItem(
+          "@remember_login",
+          JSON.stringify({ email, password })
+        );
+      } else {
+        await AsyncStorage.removeItem("@remember_login");
+      }
+
       setPageOne({ email, senha: password });
+
       Toast.show({ type: "success", text1: "Login realizado com sucesso!" });
       router.replace("/(tabs)/home");
-    } else {
+    } catch (err: any) {
+      console.log("🔥 ERRO COMPLETO:", err); // <-- Mostra tudo no console
+      console.log("📩 RESPONSE:", err?.response?.data); // <-- Mostra resposta do backend
+
+      const status = err?.response?.status;
+      const backendMsg = err?.response?.data?.message;
+
+      let msg = "Erro desconhecido";
+      if (backendMsg) msg = backendMsg;
+      else if (status === 401) msg = "Credenciais inválidas";
+      else if (status === 404) msg = "Usuário não encontrado";
+      else if (status === 500) msg = "Erro interno no servidor";
+      else if (err.message.includes("Network"))
+        msg = "Falha de conexão com o servidor";
+
       Toast.show({
         type: "error",
-        text1: "Credenciais inválidas",
-        text2: "Verifique seu email e senha",
+        text1: "Erro no login",
+        text2: msg,
       });
+
+      // opcional: alert para debug
+      Alert.alert("Erro no login", msg);
     }
   }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem("@remember_login");
+        if (saved) {
+          const { email, password } = JSON.parse(saved);
+          setValue("email", email);
+          setValue("password", password);
+        }
+      } catch (error) {
+        console.log("Erro ao recuperar credenciais:", error);
+      }
+    })();
+  }, [setValue]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -142,7 +173,6 @@ export default function LoginPage() {
           </Text>
         </View>
 
-        {/* Botão de esqueci a senha */}
         <Pressable onPress={() => router.push("/forgot")}>
           <Text style={[styles.textForgot, { color: colors.text }]}>
             Esqueci a senha
@@ -173,25 +203,10 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 25,
-  },
-  containerSenha: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  image: {
-    height: 250,
-    alignSelf: "center",
-    resizeMode: "contain",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "500",
-    textAlign: "center",
-  },
+  container: { flex: 1, justifyContent: "center", paddingHorizontal: 25 },
+  containerSenha: { flexDirection: "row", justifyContent: "space-around" },
+  image: { height: 250, alignSelf: "center", resizeMode: "contain" },
+  title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
   subtitle: {
     fontSize: 18,
     fontWeight: "700",
@@ -199,32 +214,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
   },
-  checkboxContainer: {
-    flexDirection: "row",
-    marginBottom: 15,
-  },
-  checkbox: {
-    alignSelf: "center",
-  },
-  resetPassword: {
-    textAlign: "right",
-    fontWeight: "500",
-    color: "#5692B7",
-    marginBottom: 20,
-  },
-  button: {
-    marginBottom: 20,
-    borderRadius: 10,
-  },
-  dontHaveAccount: {
-    textAlign: "right",
-  },
-  register: {
-    fontWeight: "500",
-  },
-  label: {
-    marginHorizontal: 8,
-  },
+  checkboxContainer: { flexDirection: "row", marginBottom: 15 },
+  checkbox: { alignSelf: "center" },
+  button: { marginBottom: 20, borderRadius: 10 },
+  register: { fontWeight: "500" },
   labelSecundary: {
     fontSize: 16,
     fontWeight: "500",
@@ -241,11 +234,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
   },
-  icon: {
-    marginRight: 4,
-  },
-  textForgot: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
+  icon: { marginRight: 4 },
+  textForgot: { fontWeight: "600", fontSize: 16 },
 });

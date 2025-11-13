@@ -14,11 +14,10 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-import { useMacro } from "@/contexts/macroContext";
+import { useMacro } from "@/app/contexts/MacroContext";
 import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
 import { macrosForServing, round1 } from "@/src/utils/nutrition";
 
@@ -37,99 +36,6 @@ const initialMeals: Meal[] = [
   { id: "4", name: "Café da Tarde", items: [] },
   { id: "5", name: "Jantar", items: [] },
 ];
-
-const Donut = ({
-  value,
-  goal,
-  color,
-  label,
-}: {
-  value: number;
-  goal: number;
-  color: string;
-  label: string;
-}) => {
-  const radius = 50;
-  const strokeWidth = 14;
-  const pct = goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
-  const circumference = 2 * Math.PI * radius;
-
-  return (
-    <View style={styles.donutContainer}>
-      <Svg
-        width={radius * 2 + strokeWidth * 2}
-        height={radius * 2 + strokeWidth * 2}
-      >
-        <G
-          rotation="-90"
-          origin={`${radius + strokeWidth}, ${radius + strokeWidth}`}
-        >
-          <Circle
-            cx={radius + strokeWidth}
-            cy={radius + strokeWidth}
-            r={radius}
-            stroke="#2d2d2d"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-          <Circle
-            cx={radius + strokeWidth}
-            cy={radius + strokeWidth}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            strokeDasharray={`${circumference}`}
-            strokeDashoffset={circumference - (circumference * pct) / 100}
-            strokeLinecap="round"
-          />
-        </G>
-        <SvgText
-          x={radius + strokeWidth}
-          y={radius + strokeWidth + 5}
-          fontSize="16"
-          fontWeight="bold"
-          fill={color}
-          textAnchor="middle"
-        >
-          {Math.round(pct)}%
-        </SvgText>
-      </Svg>
-      <Text style={[styles.donutLabel, { color }]}>
-        {Math.round(value)} {label === "Calorias" ? "kcal" : "g"}
-      </Text>
-      <Text style={styles.donutName}>{label}</Text>
-    </View>
-  );
-};
-
-function Pill({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-}) {
-  return (
-    <View
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: "#F1F5F9",
-        marginRight: 8,
-        marginBottom: 6,
-      }}
-    >
-      <Text style={{ fontSize: 12, color: "#0F172A" }}>
-        {label}: <Text style={{ fontWeight: "700" }}>{round1(value)}</Text>{" "}
-        {unit}
-      </Text>
-    </View>
-  );
-}
 
 export default function Home() {
   const router = useRouter();
@@ -220,7 +126,7 @@ export default function Home() {
     // mesmo id no contexto e na lista local
     const id = `${selected.id}-${Date.now()}`;
 
-    // adiciona no contexto (conta para os donuts)
+    // adiciona no contexto (conta para as barras)
     addFood({
       id,
       name: selected.name,
@@ -258,42 +164,12 @@ export default function Home() {
     setMealsState((ms) =>
       ms.map((m) => {
         if (m.id !== mealId) return m;
-        // remove do contexto (donuts atualizam)
+        // remove do contexto (barras atualizam)
         removeFood(itemId);
         return { ...m, items: m.items.filter((i) => i.id !== itemId) };
       })
     );
   };
-
-  // donuts
-  const donuts = targets
-    ? [
-        {
-          label: "Carboidrato",
-          value: consumed.carbs_g,
-          goal: targets.carbs_g,
-          color: "#36A2EB",
-        },
-        {
-          label: "Proteína",
-          value: consumed.protein_g,
-          goal: targets.protein_g,
-          color: "#FF6384",
-        },
-        {
-          label: "Gordura",
-          value: consumed.fat_g,
-          goal: targets.fat_g,
-          color: "#FFCE56",
-        },
-        {
-          label: "Calorias",
-          value: consumed.calories,
-          goal: targets.calories,
-          color: "#4BC0C0",
-        },
-      ]
-    : [];
 
   // helper de exibição (por porção/100g)
   function deriveDisplayNutrients(item: FoodItem) {
@@ -347,6 +223,22 @@ export default function Home() {
     };
   }
 
+  // calcula percentuais (defensivo)
+  const pct = {
+    carbs: targets?.carbs_g
+      ? Math.min(100, (consumed.carbs_g / targets.carbs_g) * 100)
+      : 0,
+    prot: targets?.protein_g
+      ? Math.min(100, (consumed.protein_g / targets.protein_g) * 100)
+      : 0,
+    fat: targets?.fat_g
+      ? Math.min(100, (consumed.fat_g / targets.fat_g) * 100)
+      : 0,
+    kcal: targets?.calories
+      ? Math.min(100, (consumed.calories / targets.calories) * 100)
+      : 0,
+  };
+
   return (
     <View style={styles.containerOuter}>
       {/* Botão "Fit" */}
@@ -360,20 +252,74 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
 
-        {/* Donuts */}
-        {targets ? (
-          <View style={styles.donutsCardContainer}>
-            <View style={styles.donutRow}>
-              {donuts.map((d, i) => (
-                <Donut
-                  key={i}
-                  value={d.value}
-                  goal={d.goal}
-                  color={d.color}
-                  label={d.label}
-                />
-              ))}
+        {/* Card: quanto falta hoje (sem chips, só barras) */}
+        {targets && remaining ? (
+          <View style={styles.remainingCard}>
+            <Text style={styles.remainingTitle}>Faltam hoje</Text>
+
+            {/* Carboidrato */}
+            <View style={styles.rowBetween}>
+              <Text style={styles.macroLabel}>Carboidrato</Text>
+              <Text style={styles.macroValue}>
+                {`falta ${round1(remaining.carbs_g)} g`}
+              </Text>
             </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${pct.carbs}%` }]} />
+            </View>
+            <Text style={styles.progressCaption}>
+              {`consumido ${round1(consumed.carbs_g)} g / meta ${round1(
+                targets.carbs_g
+              )} g`}
+            </Text>
+
+            {/* Proteína */}
+            <View style={[styles.rowBetween, { marginTop: 10 }]}>
+              <Text style={styles.macroLabel}>Proteína</Text>
+              <Text style={styles.macroValue}>
+                {`falta ${round1(remaining.protein_g)} g`}
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${pct.prot}%` }]} />
+            </View>
+            <Text style={styles.progressCaption}>
+              {`consumido ${round1(consumed.protein_g)} g / meta ${round1(
+                targets.protein_g
+              )} g`}
+            </Text>
+
+            {/* Gordura */}
+            <View style={[styles.rowBetween, { marginTop: 10 }]}>
+              <Text style={styles.macroLabel}>Gordura</Text>
+              <Text style={styles.macroValue}>
+                {`falta ${round1(remaining.fat_g)} g`}
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${pct.fat}%` }]} />
+            </View>
+            <Text style={styles.progressCaption}>
+              {`consumido ${round1(consumed.fat_g)} g / meta ${round1(
+                targets.fat_g
+              )} g`}
+            </Text>
+
+            {/* Calorias */}
+            <View style={[styles.rowBetween, { marginTop: 10 }]}>
+              <Text style={styles.macroLabel}>Calorias</Text>
+              <Text style={styles.macroValue}>
+                {`falta ${round1(remaining.calories)} kcal`}
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${pct.kcal}%` }]} />
+            </View>
+            <Text style={styles.progressCaption}>
+              {`consumido ${round1(consumed.calories)} kcal / meta ${round1(
+                targets.calories
+              )} kcal`}
+            </Text>
           </View>
         ) : (
           <View
@@ -388,19 +334,6 @@ export default function Home() {
             <Text style={{ color: "#fff" }}>
               Complete o cadastro para calcular suas metas diárias.
             </Text>
-          </View>
-        )}
-
-        {/* Card: quanto falta hoje */}
-        {remaining && (
-          <View style={styles.remainingCard}>
-            <Text style={styles.remainingTitle}>Faltam hoje</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              <Pill label="Carb" value={remaining.carbs_g} unit="g" />
-              <Pill label="Prot" value={remaining.protein_g} unit="g" />
-              <Pill label="Gord" value={remaining.fat_g} unit="g" />
-              <Pill label="Kcal" value={remaining.calories} unit="kcal" />
-            </View>
           </View>
         )}
 
@@ -624,10 +557,10 @@ export default function Home() {
                       );
                       return (
                         <>
-                          <Pill label="Carb" value={m.carbs_g} unit="g" />
-                          <Pill label="Prot" value={m.protein_g} unit="g" />
-                          <Pill label="Gord" value={m.fat_g} unit="g" />
-                          <Pill label="Kcal" value={m.kcal} unit="kcal" />
+                          <InfoPill label="Carb" value={m.carbs_g} unit="g" />
+                          <InfoPill label="Prot" value={m.protein_g} unit="g" />
+                          <InfoPill label="Gord" value={m.fat_g} unit="g" />
+                          <InfoPill label="Kcal" value={m.kcal} unit="kcal" />
                         </>
                       );
                     })()}
@@ -687,6 +620,34 @@ export default function Home() {
   );
 }
 
+function InfoPill({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "#F1F5F9",
+        marginRight: 8,
+        marginBottom: 6,
+      }}
+    >
+      <Text style={{ fontSize: 12, color: "#0F172A" }}>
+        {label}: <Text style={{ fontWeight: "700" }}>{round1(value)}</Text>{" "}
+        {unit}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
   title: {
@@ -709,26 +670,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     zIndex: 10,
   },
-  donutsCardContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  donutRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-    width: "100%",
-  },
-  donutContainer: { alignItems: "center", margin: 10, width: 120 },
-  donutLabel: { fontSize: 14, fontWeight: "bold", marginTop: 4 },
-  donutName: { fontSize: 14, color: "#fff", marginTop: 2 },
+
+  // Card "Faltam hoje"
   remainingCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
@@ -736,7 +679,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
-    marginTop: 12,
   },
   remainingTitle: {
     color: "#fff",
@@ -744,6 +686,32 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 16,
   },
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  macroLabel: { color: "#fff", fontWeight: "700" },
+  macroValue: { color: "#fff" },
+  progressTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 8,
+    backgroundColor: "#1F2937",
+    overflow: "hidden",
+    marginTop: 6,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#3B82F6",
+  },
+  progressCaption: {
+    color: "#8ba7c4",
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  // Lista de refeições
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -774,16 +742,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-    position: "absolute",
-    top: 40,
-    left: 20,
-  },
 
-  // 🔧 estilos do modal e inputs (os que faltavam)
+  // Modal / busca
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -815,5 +775,14 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: "#000",
     color: "#fff",
+  },
+
+  logo: {
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
+    position: "absolute",
+    top: 40,
+    left: 20,
   },
 });

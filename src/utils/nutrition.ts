@@ -22,7 +22,7 @@ export type MacroTargets = {
 
 export type UserProfile = {
   idade: number;
-  altura: number;
+  altura: number; // já em cm
   peso: number;
   sexo: "masculino" | "feminino";
   atividade: "sedentario" | "leve" | "moderado" | "ativo";
@@ -68,31 +68,45 @@ export function remainingForToday(
   };
 }
 
-// ✅ Calcula meta de macros com base no perfil do usuário
+// ✅ Calcula meta de macros com base no perfil do usuário (altura já em cm)
 export function calcMacroTargets(profile: UserProfile): MacroTargets {
   const peso = profile.peso;
-  let fator = 1.2;
-  if (profile.atividade === "leve") fator = 1.375;
-  else if (profile.atividade === "moderado") fator = 1.55;
-  else if (profile.atividade === "ativo") fator = 1.725;
+  const alturaCm = profile.altura; // já está em centímetros
+  const idade = profile.idade;
 
-  // TMB (Harris-Benedict)
-  const tmb =
+  // Fórmula Mifflin–St Jeor (BMR)
+  const bmr =
     profile.sexo === "masculino"
-      ? 88.36 + 13.4 * peso + 4.8 * profile.altura - 5.7 * profile.idade
-      : 447.6 + 9.2 * peso + 3.1 * profile.altura - 4.3 * profile.idade;
+      ? 10 * peso + 6.25 * alturaCm - 5 * idade + 5
+      : 10 * peso + 6.25 * alturaCm - 5 * idade - 161;
 
-  let calorias = tmb * fator;
+  // Nível de atividade (PAL)
+  const pal =
+    profile.atividade === "leve"
+      ? 1.375
+      : profile.atividade === "moderado"
+      ? 1.55
+      : profile.atividade === "ativo"
+      ? 1.725
+      : 1.2; // sedentário
 
-  if (profile.objetivo === "emagrecimento") calorias -= 300;
-  else if (profile.objetivo === "ganho_massa") calorias += 300;
+  // TDEE (gasto total diário)
+  let calorias = bmr * pal;
 
-  return {
-    carbs_g: (calorias * 0.50) / 4,
-    protein_g: (calorias * 0.25) / 4,
-    fat_g: (calorias * 0.25) / 9,
-    calories: calorias,
-  };
+  // Ajuste por objetivo
+  if (profile.objetivo === "emagrecimento") calorias *= 0.85; // -15%
+  else if (profile.objetivo === "ganho_massa") calorias *= 1.15; // +15%
+
+  // Piso mínimo para valores realistas
+  const caloriasMinimas = profile.sexo === "masculino" ? 1600 : 1200;
+  calorias = Math.max(calorias, caloriasMinimas);
+
+  // Distribuição padrão 50% carbs, 25% proteína, 25% gordura
+  const carbs_g = (calorias * 0.5) / 4;
+  const protein_g = (calorias * 0.25) / 4;
+  const fat_g = (calorias * 0.25) / 9;
+
+  return { carbs_g, protein_g, fat_g, calories: calorias };
 }
 
 // ✅ Arredonda valores para exibir

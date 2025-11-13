@@ -1,18 +1,52 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { apiApp } from "@/services/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSend = () => {
-    if (!email) {
+  const handleSend = async () => {
+    const emailClean = email.trim().toLowerCase();
+
+    if (!emailClean) {
       Alert.alert("Erro", "Por favor, insira seu email.");
       return;
     }
-    // Aqui vai a lógica de envio do email
-    Alert.alert("Sucesso", "Um link de redefinição foi enviado para seu email.");
+
+    setLoading(true);
+    try {
+      const res = await apiApp.post("/users/forgot-password", {
+        email: emailClean,
+      });
+
+      Alert.alert(
+        "Sucesso",
+        res.data?.message ||
+          "Um link de redefinição foi enviado para seu email."
+      );
+
+      router.push("/login");
+    } catch (err: any) {
+      console.log("Erro forgot-password:", err?.response?.data || err.message);
+
+      const msg = Alert.alert(
+        "Erro",
+        err.response?.data?.message || "Falha ao enviar email"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,7 +59,9 @@ export default function ForgotPasswordScreen() {
 
       {/* Título */}
       <Text style={styles.title}>Esqueceu a senha?</Text>
-      <Text style={styles.subtitle}>Preencha o campo para recuperar sua conta</Text>
+      <Text style={styles.subtitle}>
+        Preencha o campo para recuperar sua conta
+      </Text>
 
       {/* Campo de email */}
       <TextInput
@@ -38,8 +74,14 @@ export default function ForgotPasswordScreen() {
       />
 
       {/* Botão enviar */}
-      <TouchableOpacity style={styles.button} onPress={handleSend}>
-        <Text style={styles.buttonText}>Enviar</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSend}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Enviando..." : "Enviar"}
+        </Text>
       </TouchableOpacity>
 
       {/* Link para login */}

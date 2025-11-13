@@ -10,13 +10,16 @@ import {
   Text,
   View,
   Pressable,
+  Alert,
 } from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDataStore } from "../store/data";
-import { useMacro } from "@/contexts/macroContext";
+import { apiApp } from "@/services/api";
+
+type FormData = z.infer<typeof schema>;
 
 const sexoValues = ["masculino", "feminino"] as const;
 const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
@@ -47,24 +50,46 @@ const schema = z.object({
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
       { message: "Peso deve ser um número positivo" }
     ),
-  sexo: z
-    .string()
-    .refine((v) => sexoValues.includes(v as any), {
-      message: "Selecione o sexo",
-    }),
-  atividade: z
-    .string()
-    .refine((v) => atividadeValues.includes(v as any), {
-      message: "Selecione a atividade",
-    }),
-  objetivo: z
-    .string()
-    .refine((v) => objetivoValues.includes(v as any), {
-      message: "Selecione o objetivo",
-    }),
+  sexo: z.string().refine((v) => sexoValues.includes(v as any), {
+    message: "Selecione o sexo",
+  }),
+  atividade: z.string().refine((v) => atividadeValues.includes(v as any), {
+    message: "Selecione a atividade",
+  }),
+  objetivo: z.string().refine((v) => objetivoValues.includes(v as any), {
+    message: "Selecione o objetivo",
+  }),
 });
 
-type FormData = z.infer<typeof schema>;
+const mapLevel = (v: string) => {
+  switch (v) {
+    case "sedentario":
+      return "sedentario";
+    case "leve":
+      return "levemente_ativo";
+    case "moderado":
+      return "consideravelmente_ativo";
+    case "ativo":
+      return "ativo_com_frequencia";
+    default:
+      return "sedentario";
+  }
+};
+
+const mapObjective = (v: string) => {
+  switch (v) {
+    case "emagrecimento":
+      return "emagrecer";
+    case "manutencao":
+      return "manutencao";
+    case "ganho_massa":
+      return "ganhar_massa";
+    default:
+      return "manutencao";
+  }
+};
+
+const toNumber = (s: string) => Number(String(s).replace(",", "."));
 
 export default function CadastroPage() {
   const [nome, setNome] = useState("");
@@ -84,7 +109,6 @@ export default function CadastroPage() {
 
   const { colors } = useTheme();
   const setPageTwo = useDataStore((state) => state.setPageTwo);
-  const { setProfile } = useMacro();
 
   const {
     control,
@@ -97,8 +121,7 @@ export default function CadastroPage() {
     { label: "Feminino", value: "feminino" },
   ];
 
-  function handleCreate(data: FormData) {
-    // (opcional) mantém seu outro store
+  async function handleCreate(data: FormData) {
     setPageTwo({
       nome: data.nome,
       email: data.email,
@@ -111,18 +134,30 @@ export default function CadastroPage() {
       objetivo: data.objetivo,
     });
 
-    // ✅ agora passando o objeto exatamente no formato do UserProfile (em PT)
-    setProfile({
-      sexo: data.sexo as "masculino" | "feminino",
-      idade: Number(data.idade),
-      altura: Number(data.altura),
-      peso: Number(data.peso),
-      atividade: data.atividade as "sedentario" | "leve" | "moderado" | "ativo",
-      objetivo: data.objetivo as "emagrecimento" | "manutencao" | "ganho_massa",
-    });
+    const payload = {
+      name: data.nome,
+      email: data.email,
+      password: data.senha,
+      age: Number(data.idade),
+      height: toNumber(data.altura),
+      weight: toNumber(data.peso),
+      gender: data.sexo,
+      level: mapLevel(data.atividade),
+      objective: mapObjective(data.objetivo),
+    };
 
-    // vá para a Home para ver os donuts com as metas corretas
-    router.push("/login");
+    try {
+      const res = await apiApp.post("/users", payload);
+      // se quiser salvar o user completo no zustand:
+      // useDataStore.getState().setUser(res.data);
+
+      router.push("/login");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ?? err?.message ?? "Erro ao registrar";
+      console.error("Cadastro falhou:", msg);
+      Alert.alert("Cadastro", msg);
+    }
   }
 
   useEffect(() => {
