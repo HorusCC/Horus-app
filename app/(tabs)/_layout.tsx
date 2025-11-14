@@ -3,68 +3,62 @@ import { Tabs } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeProvider } from "../contexts/ThemeContext";
-// Se você já tem QueryClientProvider em app/_layout.tsx, dá pra remover daqui.
-// Vou manter só o ThemeProvider pra não duplicar.
-
-type IconProps = { color: string; size: number };
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 export default function TabsLayout() {
-  return (
-    <ThemeProvider>
-      <TabsWithTheme />
-    </ThemeProvider>
-  );
-}
-
-function TabsWithTheme() {
   const { colors } = useTheme();
+  const queryClient = new QueryClient();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerTitle: "",
-        headerShown: false,
-        tabBarStyle: { backgroundColor: colors.background },
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.text,
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Início",
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialIcons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="diet"
-        options={{
-          title: "Dieta",
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialIcons name="restaurant" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: "Pesquisa",
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialIcons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: "Mais",
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialIcons name="dehaze" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Tabs
+          screenOptions={{
+            headerTitle: "",
+            headerShown: false,
+            tabBarStyle: { backgroundColor: colors.background },
+            tabBarActiveTintColor: colors.text,
+            tabBarInactiveTintColor: colors.text,
+          }}
+        >
+          <Tabs.Screen
+            name="home"
+            options={{
+              title: "Início",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialIcons name="home" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="diet"
+            options={{
+              title: "Dieta",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialIcons name="restaurant" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="search"
+            options={{
+              title: "Pesquisa",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialIcons name="search" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="more"
+            options={{
+              title: "Mais",
+              tabBarIcon: ({ color, size }) => (
+                <MaterialIcons name="dehaze" size={size} color={color} />
+              ),
+            }}
+          />
+        </Tabs>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

@@ -16,6 +16,7 @@ import {
   type MacroTargets,
   type LoggedFood,
 } from "@/src/utils/nutrition";
+import { useAnimatedValue } from "react-native";
 
 // --------------------------
 // Tipos do contexto
@@ -170,7 +171,7 @@ export function MacroProvider({ children }: { children: ReactNode }) {
     () => (targets ? remainingForToday(targets, consumed) : undefined),
     [targets, consumed]
   );
-
+  useAnimatedValue;
   return (
     <MacroContext.Provider
       value={{
