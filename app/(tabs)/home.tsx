@@ -17,7 +17,7 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-import { useMacro } from "@/app/contexts/MacroContext";
+import { useMacro } from "@/contexts/macroContext";
 import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
 import { macrosForServing, round1 } from "@/src/utils/nutrition";
 
@@ -345,7 +345,9 @@ export default function Home() {
               <Text style={styles.mealTitle}>{meal.name}</Text>
               {meal.items.length ? (
                 <Text style={styles.mealItems}>
-                  {meal.items.map((i) => `${i.label} (${i.grams}g)`).join(", ")}
+                  {meal.items
+                    .map((i) => `${i.label} (${i.grams}g)`)
+                    .join(", ")}
                 </Text>
               ) : (
                 <Text
@@ -474,9 +476,7 @@ export default function Home() {
                       </View>
                     </TouchableOpacity>
                   )}
-                  onEndReached={() =>
-                    !loading && hasMore && setPage((p) => p + 1)
-                  }
+                  onEndReached={() => !loading && hasMore && setPage((p) => p + 1)}
                   onEndReachedThreshold={0.4}
                 />
               )}
@@ -494,8 +494,7 @@ export default function Home() {
                   return (
                     <Text style={{ color: "#8ba7c4", fontSize: 12 }}>
                       {d.basis} — Carb {round1(d.carbs)} g • Prot{" "}
-                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal}{" "}
-                      kcal
+                      {round1(d.prot)} g • Gord {round1(d.fat)} g • {d.kcal} kcal
                     </Text>
                   );
                 })()}
@@ -530,9 +529,7 @@ export default function Home() {
                   </View>
                 ) : null}
 
-                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>
-                  Porção (g)
-                </Text>
+                <Text style={{ color: "#8ba7c4", marginTop: 10 }}>Porção (g)</Text>
                 <TextInput
                   value={grams}
                   onChangeText={(t) => setGrams(t.replace(/[^0-9]/g, ""))}
@@ -620,15 +617,7 @@ export default function Home() {
   );
 }
 
-function InfoPill({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-}) {
+function InfoPill({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
     <View
       style={{
@@ -641,8 +630,7 @@ function InfoPill({
       }}
     >
       <Text style={{ fontSize: 12, color: "#0F172A" }}>
-        {label}: <Text style={{ fontWeight: "700" }}>{round1(value)}</Text>{" "}
-        {unit}
+        {label}: <Text style={{ fontWeight: "700" }}>{round1(value)}</Text> {unit}
       </Text>
     </View>
   );
@@ -686,11 +674,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 16,
   },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   macroLabel: { color: "#fff", fontWeight: "700" },
   macroValue: { color: "#fff" },
   progressTrack: {

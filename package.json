@@ -1,18 +1,19 @@
 {
-  "name": "horus",
-  "main": "expo-router/entry",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "test": "jest --watchAll"
-  },
-  "jest": {
-    "preset": "jest-expo"
-  },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@hookform/resolvers": "^5.2.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@tanstack/react-query": "^5.90.6",
+    "axios": "^1.13.2",
+    "expo-checkbox": "^5.0.7",
+    "expo-router": "^6.0.14",
+    "expo-status-bar": "~3.0.8",
+    "react": "^19.2.0",
+    "react-hook-form": "^7.66.0",
+    "react-native": "^0.82.1",
+    "react-native-svg": "15.12.1",
+    "react-native-toast-message": "^2.3.3",
+    "zod": "^3.25.76"
     "@expo/vector-icons": "^14.1.0",
     "@hookform/resolvers": "^5.2.1",
     "@react-native-async-storage/async-storage": "2.1.2",
@@ -54,6 +55,11 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@tsconfig/react-native": "^3.0.7",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.2",
+    "@types/react-native": "^0.72.8"
+  }
     "@babel/core": "^7.25.2",
     "@expo/cli": "^0.24.20",
     "@tsconfig/react-native": "^3.0.6",
