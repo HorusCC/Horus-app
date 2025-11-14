@@ -7,20 +7,13 @@
     "jsx": "react-native",
     "baseUrl": "./",
     "ignoreDeprecations": "6.0",
-    "types": [],                     // <- adiciona esta linha
+    "types": [],
     "paths": {
       "@/*": ["./*"],
       "@components/*": ["./components/*"],
       "@contexts/*": ["./contexts/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "android",
-    "ios"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "android", "ios"]
 }
