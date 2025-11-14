@@ -35,12 +35,7 @@ export default function LoginPage() {
     setValue,
     getValues,
   } = useForm<FormData>({
-    formState: { errors },
-    setValue,
-    getValues,
-  } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
     defaultValues: { email: "", password: "" },
   });
 
@@ -53,9 +48,6 @@ export default function LoginPage() {
 
     try {
       const res = await apiApp.post("/users/login", { email, password });
-
-      const token: string | undefined = res?.data?.token;
-      const user = res?.data?.user;
 
       const token: string | undefined = res?.data?.token;
       const user = res?.data?.user;
@@ -114,9 +106,6 @@ export default function LoginPage() {
       try {
         const saved = await AsyncStorage.getItem("@remember_login");
         if (saved) {
-      try {
-        const saved = await AsyncStorage.getItem("@remember_login");
-        if (saved) {
           const { email, password } = JSON.parse(saved);
           setValue("email", email);
           setValue("password", password);
@@ -125,7 +114,6 @@ export default function LoginPage() {
         console.log("Erro ao recuperar credenciais:", error);
       }
     })();
-  }, [setValue]);
   }, [setValue]);
 
   return (
@@ -230,10 +218,6 @@ const styles = StyleSheet.create({
   containerSenha: { flexDirection: "row", justifyContent: "space-around" },
   image: { height: 250, alignSelf: "center", resizeMode: "contain" },
   title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
-  container: { flex: 1, justifyContent: "center", paddingHorizontal: 25 },
-  containerSenha: { flexDirection: "row", justifyContent: "space-around" },
-  image: { height: 250, alignSelf: "center", resizeMode: "contain" },
-  title: { fontSize: 30, fontWeight: "500", textAlign: "center" },
   subtitle: {
     fontSize: 18,
     fontWeight: "700",
@@ -241,10 +225,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
   },
-  checkboxContainer: { flexDirection: "row", marginBottom: 15 },
-  checkbox: { alignSelf: "center" },
-  button: { marginBottom: 20, borderRadius: 10 },
-  register: { fontWeight: "500" },
   checkboxContainer: { flexDirection: "row", marginBottom: 15 },
   checkbox: { alignSelf: "center" },
   button: { marginBottom: 20, borderRadius: 10 },
@@ -265,8 +245,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
   },
-  icon: { marginRight: 4 },
-  textForgot: { fontWeight: "600", fontSize: 16 },
   icon: { marginRight: 4 },
   textForgot: { fontWeight: "600", fontSize: 16 },
 });
