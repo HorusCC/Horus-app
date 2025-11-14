@@ -5,7 +5,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeProvider } from "../contexts/ThemeContext";
 // Se você já tem QueryClientProvider em app/_layout.tsx, dá pra remover daqui.
 // Vou manter só o ThemeProvider pra não duplicar.
- 
+
 type IconProps = { color: string; size: number };
 
 export default function TabsLayout() {

@@ -59,7 +59,9 @@ function normGender(v?: string): UserProfile["sexo"] {
 }
 function toNum(v: unknown): number {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  const s = String(v ?? "").replace(/[^\d.,-]/g, "").replace(",", ".");
+  const s = String(v ?? "")
+    .replace(/[^\d.,-]/g, "")
+    .replace(",", ".");
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 }
@@ -190,6 +192,7 @@ export function MacroProvider({ children }: { children: ReactNode }) {
 
 export function useMacro() {
   const ctx = useContext(MacroContext);
-  if (!ctx) throw new Error("useMacro deve ser usado dentro de <MacroProvider>");
+  if (!ctx)
+    throw new Error("useMacro deve ser usado dentro de <MacroProvider>");
   return ctx;
 }

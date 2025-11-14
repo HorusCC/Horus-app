@@ -1,12 +1,6 @@
 // app/(tabs)/GenerateDiet.tsx
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useDataStore } from "@/store/data";
 import { apiIA } from "../../services/api";
@@ -32,7 +26,11 @@ type DietaResponse = {
 };
 
 const toNumber = (v?: string) =>
-  Number(String(v ?? "").replace(/[^\d.,-]/g, "").replace(",", "."));
+  Number(
+    String(v ?? "")
+      .replace(/[^\d.,-]/g, "")
+      .replace(",", ".")
+  );
 
 const mapObjetivo = (v?: string) => {
   switch ((v || "").toLowerCase()) {
@@ -152,16 +150,17 @@ export default function GenerateDiet() {
                       >
                         {refeicao.nome}
                       </Text>
-                      <Ionicons name="restaurant" size={22} color={colors.text} />
+                      <Ionicons
+                        name="restaurant"
+                        size={22}
+                        color={colors.text}
+                      />
                     </View>
 
                     <View style={styles.foodContentRow}>
                       <Feather name="clock" size={20} color={colors.text} />
                       <Text
-                        style={[
-                          styles.foodContentText,
-                          { color: colors.text },
-                        ]}
+                        style={[styles.foodContentText, { color: colors.text }]}
                       >
                         Horário: {refeicao.horario}
                       </Text>
