@@ -3,10 +3,14 @@ import { Tabs } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeProvider } from "../contexts/ThemeContext";
+<<<<<<< HEAD
 // Se você já tem QueryClientProvider em app/_layout.tsx, dá pra remover daqui.
 // Vou manter só o ThemeProvider pra não duplicar.
  
 type IconProps = { color: string; size: number };
+=======
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+>>>>>>> main
 
 export default function TabsLayout() {
   return (

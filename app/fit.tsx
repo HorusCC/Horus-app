@@ -4,11 +4,63 @@ import {
   TextInput, Button, RefreshControl
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+<<<<<<< HEAD
 import Donut from "../components/Donut";
 import { useSmartwatchCalories } from "../hooks/useSmartwatchCalories";
 import { Exercise, CardioExercise, StrengthExercise } from "../types/exercise";
 
 export default function Fit() {
+=======
+import Constants from "expo-constants";
+
+/* ====================== URL/TOKEN via Expo extra ====================== */
+const { API_URL, API_TOKEN } = (Constants.expoConfig?.extra ?? {}) as {
+  API_URL?: string;
+  API_TOKEN?: string;
+};
+const SMARTWATCH_API_URL = API_URL || "http://localhost:3001";
+const SMARTWATCH_TOKEN = API_TOKEN || "dev-token-qualquer";
+
+/* ====================== UI: Donut ====================== */
+const Donut = ({
+  value, total = 100, color, label, suffix = "%",
+}: { value: number; total?: number; color: string; label: string; suffix?: string }) => {
+  const radius = 50, strokeWidth = 14;
+  const pct = total <= 0 ? 0 : Math.min(100, Math.max(0, (value / total) * 100));
+  const circumference = 2 * Math.PI * radius;
+  return (
+    <View style={styles.donutContainer}>
+      <Svg width={radius * 2 + strokeWidth * 2} height={radius * 2 + strokeWidth * 2}>
+        <G rotation="-90" origin={`${radius + strokeWidth}, ${radius + strokeWidth}`}>
+          <Circle cx={radius + strokeWidth} cy={radius + strokeWidth} r={radius} stroke="#2d2d2d" strokeWidth={strokeWidth} fill="transparent" />
+          <Circle
+            cx={radius + strokeWidth} cy={radius + strokeWidth} r={radius}
+            stroke={color} strokeWidth={strokeWidth} fill="transparent"
+            strokeDasharray={`${circumference}`}
+            strokeDashoffset={circumference - (circumference * pct) / 100}
+            strokeLinecap="round"
+          />
+        </G>
+        <SvgText x={radius + strokeWidth} y={radius + strokeWidth + 5} fontSize="16" fontWeight="bold" fill={color} textAnchor="middle">
+          {Math.round(pct)}%
+        </SvgText>
+      </Svg>
+      <Text style={[styles.donutLabel, { color }]}>{Math.round(value)}{suffix}</Text>
+      <Text style={styles.donutName}>{label}</Text>
+    </View>
+  );
+};
+
+/* ====================== Tipos & Constantes ====================== */
+export type ExerciseBase = { id: string; name: string; type: 'cardio' | 'strength' };
+export type CardioExercise = ExerciseBase & { type: 'cardio'; minutes: number };
+export type StrengthExercise = ExerciseBase & { type: 'strength'; sets: number; reps: number; minutes?: number };
+export type Exercise = CardioExercise | StrengthExercise;
+
+/* ====================== Componente ====================== */
+export default function Fit() {
+  // Seeds
+>>>>>>> main
   const [exercises, setExercises] = useState<Exercise[]>([
     { id: 'c1', name: 'Cardio', type: 'cardio', minutes: 30 },
     { id: 'm1', name: 'Musculação', type: 'strength', sets: 4, reps: 12, minutes: 40 },
@@ -16,6 +68,7 @@ export default function Fit() {
 
   const weeklyGoal = 5;
   const completed = useMemo(() => Math.min(weeklyGoal, Math.ceil(exercises.length / 2)), [exercises.length]);
+<<<<<<< HEAD
   const cardioGoal = 60;
   const cardioDone = useMemo(() => exercises.filter(e => e.type === 'cardio').reduce((acc, e) => acc + e.minutes, 0), [exercises]);
   const strengthGoal = 20;
@@ -23,6 +76,48 @@ export default function Fit() {
 
   const { calories, loading, refresh } = useSmartwatchCalories();
 
+=======
+  const cardioGoal = 60; // minutos/dia
+  const cardioDone = useMemo(
+    () => exercises.filter(e => e.type === 'cardio').reduce((acc, e) => acc + e.minutes, 0),
+    [exercises]
+  );
+  const strengthGoal = 20; // séries
+  const strengthDone = useMemo(
+    () => exercises.filter(e => e.type === 'strength').reduce((acc, e) => acc + e.sets, 0),
+    [exercises]
+  );
+
+  // Calorias vindas do Smartwatch (API)
+  const [caloriesBurned, setCaloriesBurned] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => { fetchCaloriesFromSmartwatch().catch(console.error); }, []);
+
+  async function fetchCaloriesFromSmartwatch(retry = 1) {
+    try {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const url = `${SMARTWATCH_API_URL}/metrics/daily?date=${today}`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${SMARTWATCH_TOKEN}` }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCaloriesBurned(Number(data.calories) || 0);
+    } catch (e) {
+      console.error('Erro ao buscar calorias do smartwatch:', e);
+      if (retry > 0) setTimeout(() => fetchCaloriesFromSmartwatch(retry - 1), 800);
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchCaloriesFromSmartwatch(0);
+    setRefreshing(false);
+  };
+
+  // Estado do modal (adicionar exercício)
+>>>>>>> main
   const [modalVisible, setModalVisible] = useState(false);
   const [category, setCategory] = useState<'cardio' | 'strength'>('cardio');
   const [name, setName] = useState('Cardio');
@@ -54,6 +149,10 @@ export default function Fit() {
   };
 
   const removeExercise = (id: string) => setExercises(prev => prev.filter(e => e.id !== id));
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
   const cardio = exercises.filter(e => e.type === 'cardio');
   const strength = exercises.filter(e => e.type === 'strength');
 
@@ -61,7 +160,11 @@ export default function Fit() {
     <View style={styles.containerOuter}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40 }}
+<<<<<<< HEAD
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#fff" />}
+=======
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+>>>>>>> main
       >
         <Text style={styles.title}>Fitness</Text>
 

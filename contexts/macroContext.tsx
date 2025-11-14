@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // src/contexts/macroContext.tsx
+=======
+>>>>>>> main
 import React, {
   createContext,
   useContext,
@@ -17,9 +20,13 @@ import {
   type LoggedFood,
 } from "@/src/utils/nutrition";
 
+<<<<<<< HEAD
 // --------------------------
 // Tipos do contexto
 // --------------------------
+=======
+// ✅ Tipagem do contexto
+>>>>>>> main
 type MacroContextType = {
   profile?: UserProfile;
   targets?: MacroTargets;
@@ -33,6 +40,7 @@ type MacroContextType = {
 };
 
 const MacroContext = createContext<MacroContextType | undefined>(undefined);
+<<<<<<< HEAD
 
 // Chaves de armazenamento
 const STORAGE_KEY = "macroData@v1";
@@ -83,12 +91,16 @@ function profileFromAuthUser(authUser: any | null): UserProfile | undefined {
 
   return { idade, altura, peso, sexo, atividade, objetivo };
 }
+=======
+const STORAGE_KEY = "macroData@v1";
+>>>>>>> main
 
 export function MacroProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile>();
   const [targets, setTargets] = useState<MacroTargets>();
   const [foodsToday, setFoodsToday] = useState<LoggedFood[]>([]);
 
+<<<<<<< HEAD
   // Carrega estado salvo + detecta usuário do login
   useEffect(() => {
     (async () => {
@@ -133,11 +145,30 @@ export function MacroProvider({ children }: { children: ReactNode }) {
         }
       } catch (e) {
         console.log("❌ macroContext init error:", e);
+=======
+  // 🧠 Carrega dados salvos no AsyncStorage ao abrir o app
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await AsyncStorage.getItem(STORAGE_KEY);
+        if (data) {
+          const parsed = JSON.parse(data);
+          setProfileState(parsed.profile);
+          setTargets(parsed.targets);
+          setFoodsToday(parsed.foodsToday || []);
+        }
+      } catch (error) {
+        console.log("❌ Erro ao carregar dados:", error);
+>>>>>>> main
       }
     })();
   }, []);
 
+<<<<<<< HEAD
   // Persiste sempre que mudar algo
+=======
+  // 💾 Salva automaticamente sempre que algo mudar
+>>>>>>> main
   useEffect(() => {
     (async () => {
       try {
@@ -145,17 +176,27 @@ export function MacroProvider({ children }: { children: ReactNode }) {
           STORAGE_KEY,
           JSON.stringify({ profile, targets, foodsToday })
         );
+<<<<<<< HEAD
       } catch (e) {
         console.log("❌ macroContext save error:", e);
+=======
+      } catch (error) {
+        console.log("❌ Erro ao salvar dados:", error);
+>>>>>>> main
       }
     })();
   }, [profile, targets, foodsToday]);
 
+<<<<<<< HEAD
   // API do contexto
+=======
+  // 👤 Define o perfil e calcula metas de macros
+>>>>>>> main
   const setProfile = (p: UserProfile) => {
     setProfileState(p);
     setTargets(calcMacroTargets(p));
   };
+<<<<<<< HEAD
   const addFood = (food: LoggedFood) =>
     setFoodsToday((prev) => [food, ...prev]);
   const removeFood = (id: string) =>
@@ -163,6 +204,25 @@ export function MacroProvider({ children }: { children: ReactNode }) {
   const resetDay = () => setFoodsToday([]);
 
   // Derivados
+=======
+
+  // ➕ Adiciona alimento consumido
+  const addFood = (food: LoggedFood) => {
+    setFoodsToday((prev) => [food, ...prev]);
+  };
+
+  // ❌ Remove alimento consumido
+  const removeFood = (id: string) => {
+    setFoodsToday((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  // 🔁 Reinicia o dia
+  const resetDay = () => {
+    setFoodsToday([]);
+  };
+
+  // 📊 Calcula automaticamente o total consumido e o restante
+>>>>>>> main
   const consumed = useMemo(() => sumConsumed(foodsToday), [foodsToday]);
   const remaining = useMemo(
     () => (targets ? remainingForToday(targets, consumed) : undefined),
@@ -188,8 +248,18 @@ export function MacroProvider({ children }: { children: ReactNode }) {
   );
 }
 
+<<<<<<< HEAD
 export function useMacro() {
   const ctx = useContext(MacroContext);
   if (!ctx) throw new Error("useMacro deve ser usado dentro de <MacroProvider>");
   return ctx;
+=======
+// ✅ Hook para usar em qualquer tela
+export function useMacro() {
+  const context = useContext(MacroContext);
+  if (!context) {
+    throw new Error("useMacro deve ser usado dentro de <MacroProvider>");
+  }
+  return context;
+>>>>>>> main
 }

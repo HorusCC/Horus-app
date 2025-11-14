@@ -54,8 +54,14 @@ const mapObjetivo = (v?: string) => {
 };
 
 export default function GenerateDiet() {
+<<<<<<< HEAD
   const user = useDataStore((state: any) => state.user); // <- tipado
   const { colors } = useTheme();
+=======
+  const user = useDataStore((state) => state.user);
+  console.log("Dados do usuário na tela de dieta:", user);
+  const { colors, theme } = useTheme();
+>>>>>>> main
 
   const { data, isFetching, error } = useQuery<DietaResponse>({
     queryKey: ["diet", user?.email],
@@ -68,6 +74,7 @@ export default function GenerateDiet() {
       const peso = toNumber(user.peso);
       const objetivo = mapObjetivo(user.objetivo);
 
+<<<<<<< HEAD
       const payload = {
         nome: user.nome,
         sexo: user.sexo,
@@ -87,6 +94,15 @@ export default function GenerateDiet() {
 
       const res = await apiIA.post<{ data: DietaResponse }>("/create", payload);
       return res.data.data;
+=======
+        console.log("Resposta da API na tela de dieta:", response.data);
+
+        return response.data.data;
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
+>>>>>>> main
     },
   });
 

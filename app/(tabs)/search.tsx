@@ -1,4 +1,3 @@
-// app/(tabs)/search.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -10,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { searchFoodsByName, FoodItem } from "../../src/services/openFoodFacts";
+import { FoodItem, searchFoodsByName } from "../../src/services/openFoodFacts";
 
 export default function SearchConsultOnly() {
   const [query, setQuery] = useState("");

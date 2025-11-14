@@ -2,12 +2,17 @@
   "extends": "@tsconfig/react-native/tsconfig.json",
   "compilerOptions": {
     "strict": true,
+<<<<<<< HEAD
     "moduleResolution": "Node16",
     "module": "Node16",
     "jsx": "react-native",
     "baseUrl": "./",
     "ignoreDeprecations": "6.0",
     "types": [],                     // <- adiciona esta linha
+=======
+    "baseUrl": ".",              // <— ajuda o paths "@/*"
+    "skipLibCheck": true,        // <— ignora checagem interna de libs
+>>>>>>> main
     "paths": {
       "@/*": ["./*"],
       "@components/*": ["./components/*"],

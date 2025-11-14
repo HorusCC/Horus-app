@@ -1,3 +1,121 @@
+<<<<<<< HEAD
 node_modules
 .expo
 android/
+=======
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
+
+# Apenas manter o wrapper (importante)
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
+
+# Apenas manter o wrapper (importante)
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
+# Gradle cache local
+android/gradle/
+android/.gradle/
+android/build/
+android/app/build/
+
+# Binários baixados pelo Gradle
+android/**/*.jar
+android/**/*.zip
+android/**/*.lck
+android/**/*.TAG
+android/**/*.txt
+
+# IDEA/Android Studio
+android/.idea/
+android/*.iml
+
+# Keystores (não versionar chaves privadas!)
+android/*.keystore
+android/*.jks
+
+# Apenas manter o wrapper (importante)
+!android/gradle/wrapper/
+!android/gradle/wrapper/**
+
+.idea/
+*.iml
+>>>>>>> main
