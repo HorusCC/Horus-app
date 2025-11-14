@@ -17,7 +17,7 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-import { useMacro } from "@/app/contexts/MacroContext";
+import { useMacro } from "../contexts/MacroContext";
 import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
 import { macrosForServing, round1 } from "@/src/utils/nutrition";
 
@@ -40,6 +40,10 @@ const initialMeals: Meal[] = [
 export default function Home() {
   const router = useRouter();
   const { targets, consumed, remaining, addFood, removeFood } = useMacro();
+
+  console.log("TARGETS:", targets);
+  console.log("REMAINING:", remaining);
+  console.log("CONSUMED:", consumed);
 
   const [mealsState, setMealsState] = useState<Meal[]>(initialMeals);
 

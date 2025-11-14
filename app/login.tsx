@@ -52,6 +52,13 @@ export default function LoginPage() {
       const token: string | undefined = res?.data?.token;
       const user = res?.data?.user;
 
+      await AsyncStorage.setItem("@auth_user", JSON.stringify(user));
+
+      // se quiser guardar o token também:
+      if (token) {
+        await AsyncStorage.setItem("@auth_token", token);
+      }
+
       if (isSelected) {
         await AsyncStorage.setItem(
           "@remember_login",
