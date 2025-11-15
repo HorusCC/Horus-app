@@ -17,7 +17,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useDataStore } from "../store/data";
-import { apiApp } from "@/services/api"; // ✅ mantém apiApp
+import { apiApp } from "@/services/api";
+
+type FormData = z.infer<typeof schema>;
 
 const sexoValues = ["masculino", "feminino"] as const;
 const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
@@ -34,19 +36,25 @@ const schema = z.object({
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
-      { message: "Idade deve ser um número positivo" }
+      {
+        message: "Idade deve ser um número positivo",
+      }
     ),
   altura: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
-      { message: "Altura deve ser um número positivo" }
+      {
+        message: "Altura deve ser um número positivo",
+      }
     ),
   peso: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
-      { message: "Peso deve ser um número positivo" }
+      {
+        message: "Peso deve ser um número positivo",
+      }
     ),
   sexo: z.string().refine((v) => sexoValues.includes(v as any), {
     message: "Selecione o sexo",
@@ -58,8 +66,6 @@ const schema = z.object({
     message: "Selecione o objetivo",
   }),
 });
-
-type FormData = z.infer<typeof schema>; // ✅ movido pra depois do schema
 
 const mapLevel = (v: string) => {
   switch (v) {
@@ -106,14 +112,13 @@ export default function CadastroPage() {
     tmb: number;
     classificacao: string;
   } | null>(null);
-
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
 
   const {
     control,
     handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
+    formState: { errors, isValid },
+  } = useForm({
     resolver: zodResolver(schema),
   });
 
@@ -122,7 +127,7 @@ export default function CadastroPage() {
     { label: "Feminino", value: "feminino" },
   ];
 
-  const setPageTwo = useDataStore((state: any) => state.setPageTwo); // ✅ tipado
+  const setPageTwo = useDataStore((state) => state.setPageTwo);
 
   async function handleCreate(data: FormData) {
     setPageTwo({
@@ -138,9 +143,9 @@ export default function CadastroPage() {
     });
 
     const payload = {
-      name: data.nome.trim(),
-      email: data.email.trim(),
-      password: String(data.senha),
+      name: data.nome,
+      email: data.email,
+      password: data.senha,
       age: Number(data.idade),
       height: toNumber(data.altura),
       weight: toNumber(data.peso),
@@ -150,8 +155,10 @@ export default function CadastroPage() {
     };
 
     try {
-      await apiApp.post("/users", payload);
-      Alert.alert("Cadastro", "Usuário cadastrado com sucesso!");
+      const res = await apiApp.post("/users", payload);
+      // se quiser salvar o user completo no zustand:
+      // useDataStore.getState().setUser(res.data);
+
       router.push("/login");
     } catch (err: any) {
       const msg =
@@ -180,6 +187,7 @@ export default function CadastroPage() {
       !isNaN(idadeNum)
     ) {
       const imc = pesoKg / (alturaM * alturaM);
+
       const tmb =
         sexo === "masculino"
           ? 88.36 + 13.4 * pesoKg + 4.8 * parseFloat(altura) - 5.7 * idadeNum
@@ -204,7 +212,147 @@ export default function CadastroPage() {
         { backgroundColor: colors.background },
       ]}
     >
-      {/* ... resto igual ... */}
+      <Image
+        style={styles.image}
+        source={require("../assets/images/horusNew.png")}
+      />
+      <Text style={[styles.title, { color: colors.text }]}>Criar conta</Text>
+      <Text style={styles.subtitle}>
+        Preencha os dados abaixo para continuar
+      </Text>
+
+      <Text style={[styles.label, { color: colors.textRegister }]}>Nome</Text>
+      <Input
+        name="nome"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite seu nome:"
+        value={nome}
+        onChangeText={setNome}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
+      <Input
+        name="email"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite seu email:"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
+      <Input
+        name="senha"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua senha:"
+        value={senha}
+        secureTextEntry
+        onChangeText={setSenha}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
+      <Input
+        name="idade"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua idade:"
+        value={idade}
+        keyboardType="numeric"
+        onChangeText={setIdade}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
+      <Input
+        name="altura"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite sua altura: (cm)"
+        value={altura}
+        keyboardType="numeric"
+        onChangeText={setAltura}
+      />
+      <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
+      <Input
+        name="peso"
+        control={control}
+        style={[
+          styles.input,
+          { backgroundColor: colors.blackTransparent, color: colors.text },
+        ]}
+        placeholder="Digite seu peso: (kg)"
+        value={peso}
+        keyboardType="numeric"
+        onChangeText={setPeso}
+      />
+
+      <Text style={[styles.label, { color: colors.textRegister }]}>Sexo</Text>
+      <Select
+        name="sexo"
+        control={control}
+        options={genderOptions}
+        error={errors.sexo?.message}
+      />
+
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Atividade Física
+      </Text>
+      <Select
+        name="atividade"
+        control={control}
+        options={[
+          { label: "Sedentário", value: "sedentario" },
+          { label: "Levemente ativo", value: "leve" },
+          { label: "Moderadamente ativo", value: "moderado" },
+          { label: "Muito ativo", value: "ativo" },
+        ]}
+      />
+
+      <Text style={[styles.label, { color: colors.textRegister }]}>
+        Objetivo
+      </Text>
+      <Select
+        name="objetivo"
+        control={control}
+        options={[
+          { label: "Emagrecimento", value: "emagrecimento" },
+          { label: "Manutenção", value: "manutencao" },
+          { label: "Ganho de massa muscular", value: "ganho_massa" },
+        ]}
+      />
+
+      {resultado && (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultText}>IMC: {resultado.imc.toFixed(2)}</Text>
+          <Text style={styles.resultText}>
+            TMB: {resultado.tmb.toFixed(2)} kcal/dia
+          </Text>
+          <Text style={styles.resultText}>
+            Classificação: {resultado.classificacao}
+          </Text>
+
+          <View style={styles.table}>
+            <Text style={styles.tableTitle}>Classificação IMC</Text>
+            <Text style={styles.tableText}>• Magreza: abaixo de 18.5</Text>
+            <Text style={styles.tableText}>• Normal: entre 18.5 e 24.9</Text>
+            <Text style={styles.tableText}>• Sobrepeso: entre 25.0 e 29.9</Text>
+            <Text style={styles.tableText}>• Obesidade: acima de 30.0</Text>
+          </View>
+        </View>
+      )}
+
       <Pressable
         style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
         onPress={handleSubmit(handleCreate)}
@@ -218,7 +366,11 @@ export default function CadastroPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 25, backgroundColor: "#00060E", flexGrow: 1 },
+  container: {
+    padding: 25,
+    backgroundColor: "#00060E",
+    flexGrow: 1,
+  },
   image: {
     height: 180,
     alignSelf: "center",
@@ -252,8 +404,28 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
   },
-  resultText: { fontSize: 16, fontWeight: "500", color: "#fff", marginBottom: 5 },
-  label: { marginBottom: 5, fontSize: 16, fontWeight: "500" },
+  resultText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff",
+    marginBottom: 5,
+  },
+  table: {
+    marginTop: 10,
+  },
+  tableTitle: {
+    fontWeight: "700",
+    color: "#5692B7",
+    marginBottom: 5,
+  },
+  tableText: {
+    color: "#ccc",
+  },
+  label: {
+    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: "500",
+  },
   input: {
     width: "auto",
     height: 50,
