@@ -15,7 +15,7 @@ const HOST = __DEV__ ? DEV_HOST : PROD_HOST;
 export const API_BASE_URL = HOST;
 
 export const apiApp = axios.create({
-  baseURL: `${HOST}/api`,
+  baseURL: `${HOST}/apiSmartwatch`,
   timeout: 20000,
 });
 
