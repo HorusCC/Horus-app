@@ -1,4 +1,4 @@
-package com.anonymous.Horus
+package com.anonymous.seuapp
 
 import android.app.Application
 import android.content.res.Configuration
