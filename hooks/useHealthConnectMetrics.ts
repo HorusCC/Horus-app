@@ -26,9 +26,14 @@ export function useHealthConnectMetrics() {
     }
 
     // 2) Checar se o módulo nativo existe
-    const nativeModule = (NativeModules as any).HealthConnect;
+    const nativeModule =
+      (NativeModules as any).HealthConnectModule ||
+      (NativeModules as any).HealthConnect;
+
     if (!nativeModule) {
-      setError("Módulo do Health Connect não está disponível no dispositivo.");
+      setError(
+        "Health Connect não está disponível neste dispositivo ou módulo não carregou."
+      );
       return;
     }
 
@@ -42,30 +47,36 @@ export function useHealthConnectMetrics() {
       setError("Health Connect requer Android 8.0 (API 26) ou superior.");
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
 
-      // 4) Inicializa o Health Connect
-      const isInitialized = await initialize().catch((e) => {
-        console.log("[HealthConnect] Erro em initialize:", e);
-        return false;
-      });
+      // PROTEGIDO CONTRA CRASH
+      let isInitialized = false;
+      try {
+        isInitialized = await initialize();
+      } catch (e) {
+        console.log("[HC] initialize crash:", e);
+        setError("Health Connect não está instalado.");
+        return;
+      }
 
       if (!isInitialized) {
-        setError("Não foi possível inicializar o Health Connect.");
+        setError("Falha ao inicializar o Health Connect.");
         return;
       }
 
       // 5) Pede permissões
-      await requestPermission([
-        { accessType: "read", recordType: "Steps" },
-        { accessType: "read", recordType: "TotalCaloriesBurned" },
-      ]).catch((e) => {
-        console.log("[HealthConnect] Erro em requestPermission:", e);
-        throw new Error("Permissões do Health Connect negadas ou com erro.");
-      });
+      try {
+        await requestPermission([
+          { accessType: "read", recordType: "Steps" },
+          { accessType: "read", recordType: "TotalCaloriesBurned" },
+        ]);
+      } catch (e) {
+        console.log("[HealthConnect] requestPermission() crash:", e);
+        setError("Não é possível pedir permissão ao Health Connect.");
+        return;
+      }
 
       // 6) Intervalo de hoje (00:00 até agora)
       const now = new Date();
