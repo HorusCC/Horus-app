@@ -1,15 +1,22 @@
-export default {
-  name: "SeuApp",
-  slug: "seuapp",
-  scheme: "seuapp",
+import { ExpoConfig, ConfigContext } from "@expo/config";
 
-  extra: {
-    API_URL: process.env.API_URL,
-    API_TOKEN: process.env.API_TOKEN,
-    DAILY_KCAL_GOAL: Number(process.env.DAILY_KCAL_GOAL || 2000),
-  },
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const isDev = process.env.APP_ENV !== "production";
 
-  android: {
-    package: "com.anonymous.seuapp", // escolha o ID do seu app
-  },
+  return {
+    ...config,
+    name: "SeuApp",
+    slug: "SeuApp",
+    extra: {
+      apiBaseUrl: isDev
+        ? "http://192.168.15.3:8080/api"
+        : "https://backendtcc-iikl.onrender.com/api",
+
+      apiAIBaseUrl: isDev
+        ? "http://192.168.15.3:8080/ai"
+        : "https://backendtcc-iikl.onrender.com/ai",
+
+      APP_ENV: isDev ? "development" : "production",
+    },
+  };
 };

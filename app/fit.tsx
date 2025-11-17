@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+// app/Fit.tsx
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,9 +12,12 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Donut from "../components/Donut";
-import { useSmartwatchCalories } from "../hooks/useSmartwatchCalories";
-import { Exercise, CardioExercise, StrengthExercise } from "../types/exercise";
+import { useHealthConnectMetrics } from "../hooks/useHealthConnectMetrics";
+import {
+  Exercise,
+  CardioExercise,
+  StrengthExercise,
+} from "../types/exercise";
 
 export default function Fit() {
   const [exercises, setExercises] = useState<Exercise[]>([
@@ -33,6 +37,7 @@ export default function Fit() {
     () => Math.min(weeklyGoal, Math.ceil(exercises.length / 2)),
     [exercises.length]
   );
+
   const cardioGoal = 60;
   const cardioDone = useMemo(
     () =>
@@ -41,7 +46,7 @@ export default function Fit() {
         .reduce((acc, e) => acc + e.minutes, 0),
     [exercises]
   );
-  const strengthGoal = 20;
+
   const strengthDone = useMemo(
     () =>
       exercises
@@ -50,8 +55,31 @@ export default function Fit() {
     [exercises]
   );
 
-  const { calories, loading, refresh } = useSmartwatchCalories();
+  // 👉 AGORA: dados vindos do Health Connect (Google Fit / Zepp / etc)
+  const {
+    calories,
+    steps,
+    loading,
+    error,
+    refresh,
+  } = useHealthConnectMetrics();
 
+  // já carrega no primeiro render (hook faz isso, então aqui é opcional)
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const caloriesDisplay = useMemo(
+    () => (Number.isFinite(calories) ? Math.round(calories) : 0),
+    [calories]
+  );
+  const stepsDisplay = useMemo(
+    () => (Number.isFinite(steps) ? Math.round(steps) : 0),
+    [steps]
+  );
+  const stepsGoal = 8000;
+
+  // Modal de novo exercício
   const [modalVisible, setModalVisible] = useState(false);
   const [category, setCategory] = useState<"cardio" | "strength">("cardio");
   const [name, setName] = useState("Cardio");
@@ -81,8 +109,8 @@ export default function Fit() {
       };
       setExercises((prev) => [ex, ...prev]);
     } else {
-      const s = Number(sets),
-        r = Number(reps);
+      const s = Number(sets);
+      const r = Number(reps);
       const m = Number(minutes) || undefined;
       if (
         !name.trim() ||
@@ -107,13 +135,14 @@ export default function Fit() {
 
   const removeExercise = (id: string) =>
     setExercises((prev) => prev.filter((e) => e.id !== id));
+
   const cardio = exercises.filter((e) => e.type === "cardio");
   const strength = exercises.filter((e) => e.type === "strength");
 
   return (
     <View style={styles.containerOuter}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40, paddingTop: 16 }}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -124,36 +153,91 @@ export default function Fit() {
       >
         <Text style={styles.title}>Fitness</Text>
 
-        <View style={styles.donutsCardContainer}>
-          <View style={styles.donutRow}>
-            <Donut
-              value={cardioDone}
-              total={cardioGoal}
-              color="#4BC0C0"
-              label="Passos"
-              suffix="m"
-            />
-            <Donut
-              value={calories}
-              total={500}
-              color="#FFA500"
-              label="Kcal"
-              suffix=" kcal"
-            />
+        {/* Card principal com meta semanal + métricas */}
+        <View style={styles.mainCard}>
+          <View style={styles.weekSummaryRow}>
+            <View style={styles.weekChip}>
+              <Ionicons name="calendar-outline" size={16} color="#fff" />
+              <Text style={styles.weekChipText}>
+                Semana: {completed}/{weeklyGoal} treinos
+              </Text>
+            </View>
+            <Text style={styles.smallHint}>Continue se movimentando 🔥</Text>
           </View>
+
+          <View style={styles.metricsRow}>
+            {/* Passos (👣) */}
+            <View style={styles.metricCard}>
+              <Text style={styles.metricIcon}>👣</Text>
+              <Text style={styles.metricLabel}>Passos</Text>
+              <Text style={styles.metricValue}>
+                {loading
+                  ? "..."
+                  : error
+                  ? "--"
+                  : stepsDisplay.toLocaleString("pt-BR")}
+              </Text>
+              <Text style={styles.metricSub}>
+                {loading
+                  ? "Sincronizando Health Connect"
+                  : error
+                  ? "Não foi possível ler os passos"
+                  : `Meta ${stepsGoal.toLocaleString("pt-BR")} passos`}
+              </Text>
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.min(
+                        100,
+                        (stepsDisplay / stepsGoal) * 100 || 0
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Calorias (🔥) */}
+            <View style={styles.metricCard}>
+              <Text style={styles.metricIcon}>🔥</Text>
+              <Text style={styles.metricLabel}>Calorias</Text>
+              <Text style={styles.metricValue}>
+                {loading ? "..." : error ? "--" : `${caloriesDisplay} kcal`}
+              </Text>
+              <Text style={styles.metricSub}>
+                {loading
+                  ? "Sincronizando Health Connect"
+                  : error
+                  ? "Não foi possível ler as calorias"
+                  : "Meta 500 kcal"}
+              </Text>
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFillCalories,
+                    {
+                      width: `${Math.min(
+                        100,
+                        (caloriesDisplay / 500) * 100 || 0
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          </View>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
 
         {/* Cardio */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 16,
-            marginTop: 20,
-          }}
-        >
-          <Text style={styles.sectionTitle}>Cardio (minutos)</Text>
-          <View style={{ flex: 1 }} />
+        <View style={styles.sectionHeaderRow}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="walk-outline" size={20} color="#4BC0C0" />
+            <Text style={styles.sectionTitle}>Cardio (minutos)</Text>
+          </View>
           <TouchableOpacity
             onPress={() => openAdd("cardio")}
             style={styles.addButton}
@@ -163,6 +247,10 @@ export default function Fit() {
         </View>
 
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+          <Text style={styles.sectionBadge}>
+            {cardioDone} / {cardioGoal} min de cardio nesta semana
+          </Text>
+
           {cardio.map((e) => (
             <View key={e.id} style={styles.exerciseItem}>
               <View>
@@ -175,25 +263,18 @@ export default function Fit() {
             </View>
           ))}
           {cardio.length === 0 && (
-            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 12 }}>
-              Nenhuma atividade de cardio
-            </Text>
+            <Text style={styles.emptyText}>Nenhuma atividade de cardio</Text>
           )}
         </View>
 
         {/* Musculação */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 16,
-            marginTop: 26,
-          }}
-        >
-          <Text style={styles.sectionTitle}>
-            Musculação (séries x repetições)
-          </Text>
-          <View style={{ flex: 1 }} />
+        <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="barbell-outline" size={20} color="#9B59B6" />
+            <Text style={styles.sectionTitle}>
+              Musculação (séries x repetições)
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() => openAdd("strength")}
             style={styles.addButton}
@@ -203,6 +284,10 @@ export default function Fit() {
         </View>
 
         <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+          <Text style={styles.sectionBadge}>
+            {strengthDone} séries registradas
+          </Text>
+
           {strength.map((e) => (
             <View key={e.id} style={styles.exerciseItem}>
               <View>
@@ -218,13 +303,13 @@ export default function Fit() {
             </View>
           ))}
           {strength.length === 0 && (
-            <Text style={{ color: "#aaa", textAlign: "center", marginTop: 12 }}>
+            <Text style={styles.emptyText}>
               Nenhum exercício de musculação
             </Text>
           )}
         </View>
 
-        {/* Modal */}
+        {/* Modal de novo exercício */}
         <Modal
           transparent
           visible={modalVisible}
@@ -233,18 +318,9 @@ export default function Fit() {
         >
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
-              <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-                Novo exercício
-              </Text>
+              <Text style={styles.modalTitle}>Novo exercício</Text>
 
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 8,
-                  marginTop: 10,
-                  marginBottom: 4,
-                }}
-              >
+              <View style={styles.catRow}>
                 <TouchableOpacity
                   onPress={() => setCategory("cardio")}
                   style={[
@@ -252,7 +328,7 @@ export default function Fit() {
                     category === "cardio" && styles.catButtonActive,
                   ]}
                 >
-                  <Text style={{ color: "#fff" }}>Cardio</Text>
+                  <Text style={styles.catButtonText}>Cardio</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setCategory("strength")}
@@ -261,7 +337,7 @@ export default function Fit() {
                     category === "strength" && styles.catButtonActive,
                   ]}
                 >
-                  <Text style={{ color: "#fff" }}>Musculação</Text>
+                  <Text style={styles.catButtonText}>Musculação</Text>
                 </TouchableOpacity>
               </View>
 
@@ -313,16 +389,11 @@ export default function Fit() {
                 </>
               )}
 
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  gap: 8,
-                }}
-              >
+              <View style={styles.modalButtonsRow}>
                 <Button
                   title="Cancelar"
                   onPress={() => setModalVisible(false)}
+                  color="#888"
                 />
                 <Button title="Adicionar" onPress={addExercise} />
               </View>
@@ -336,38 +407,142 @@ export default function Fit() {
 
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
+
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 60,
-    marginBottom: 20,
+    fontSize: 26,
+    fontWeight: "800",
+    marginTop: 40,
+    marginBottom: 10,
     textAlign: "center",
-    color: "#0057C9",
+    color: "#ffffff",
+    letterSpacing: 0.5,
   },
-  donutsCardContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
+
+  mainCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
     padding: 16,
     marginHorizontal: 16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  donutRow: {
+
+  weekSummaryRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-    width: "100%",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0057C9",
-    marginTop: 0,
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
+
+  weekChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: 6,
+    backgroundColor: "rgba(0,87,201,0.3)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+
+  weekChipText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  smallHint: {
+    color: "#aaa",
+    fontSize: 12,
+  },
+
+  metricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+    columnGap: 12,
+  },
+
+  metricCard: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+
+  metricIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+
+  metricLabel: {
+    color: "#aaa",
+    fontSize: 13,
+  },
+
+  metricValue: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+
+  metricSub: {
+    color: "#888",
+    fontSize: 11,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+
+  progressBarBackground: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
+  },
+
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#4BC0C0",
+  },
+
+  progressBarFillCalories: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#FFA500",
+  },
+
+  errorText: {
+    marginTop: 8,
+    color: "#ff6b6b",
+    fontSize: 12,
+    textAlign: "center",
+  },
+
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 8,
+    justifyContent: "space-between",
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#ffffff",
+    marginLeft: 8,
+  },
+
+  sectionBadge: {
+    color: "#4BC0C0",
+    fontSize: 12,
+    marginBottom: 6,
+  },
+
   exerciseItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -377,10 +552,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.16)",
   },
+
   exerciseName: { color: "#fff", fontSize: 16, fontWeight: "600" },
+
   exerciseMeta: { color: "#aaa", marginTop: 2 },
+
   addButton: {
     backgroundColor: "#0057C9",
     borderRadius: 30,
@@ -389,20 +567,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
+  emptyText: {
+    color: "#aaa",
+    textAlign: "center",
+    marginTop: 12,
+    fontSize: 13,
+  },
+
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
+
   modalContent: {
     width: "90%",
-    backgroundColor: "#000",
+    backgroundColor: "#05070b",
     borderRadius: 12,
     padding: 16,
     borderColor: "#5692B7",
     borderWidth: 1,
   },
+
+  modalTitle: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   modalInput: {
     borderWidth: 1,
     borderColor: "#0057C9",
@@ -412,13 +606,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     color: "#fff",
   },
+
+  catRow: {
+    flexDirection: "row",
+    columnGap: 8,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
   catButton: {
+    flex: 1,
     backgroundColor: "rgba(255,255,255,0.08)",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderColor: "#0057C9",
     borderWidth: 1,
+    alignItems: "center",
   },
+
   catButtonActive: { backgroundColor: "rgba(0,87,201,0.5)" },
+
+  catButtonText: {
+    color: "#fff",
+    fontWeight: "500",
+  },
+
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    columnGap: 8,
+    marginTop: 8,
+  },
 });
