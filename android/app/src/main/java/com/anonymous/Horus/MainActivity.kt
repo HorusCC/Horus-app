@@ -1,4 +1,4 @@
-package com.anonymous.seuapp
+package com.anonymous.Horus
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
