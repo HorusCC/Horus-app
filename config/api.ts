@@ -8,8 +8,11 @@ const DEV_HOST =
 
 const PROD_HOST = "https://backendtcc-iikl.onrender.com";
 
-// Alterna automaticamente conforme ambiente:
+// alterna automaticamente
 const HOST = __DEV__ ? DEV_HOST : PROD_HOST;
+
+// 👉 EXPORT importante que o smartwatchService vai usar
+export const API_BASE_URL = HOST;
 
 export const apiApp = axios.create({
   baseURL: `${HOST}/api`,
