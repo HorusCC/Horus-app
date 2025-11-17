@@ -16,10 +16,16 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { create } from "zustand";
 
 import { useMacro } from "../contexts/MacroContext";
+import { useDataStore } from "../../store/data"; // <-- seu store de user
 import { searchFoodsByName, FoodItem } from "@/src/services/openFoodFacts";
 import { macrosForServing, round1 } from "@/src/utils/nutrition";
+
+/* ------------------------------------------------------------------ */
+/*  TIPOS E ESTADO DE REFEIÇÕES (POR USUÁRIO, EM MEMÓRIA)            */
+/* ------------------------------------------------------------------ */
 
 type MealItem = {
   id: string;
@@ -27,9 +33,10 @@ type MealItem = {
   grams: number;
   macros: { carbs_g: number; protein_g: number; fat_g: number; kcal: number };
 };
+
 type Meal = { id: string; name: string; items: MealItem[] };
 
-const initialMeals: Meal[] = [
+const baseMeals: Meal[] = [
   { id: "1", name: "Café da Manhã", items: [] },
   { id: "2", name: "Lanche da Manhã", items: [] },
   { id: "3", name: "Almoço", items: [] },
@@ -37,15 +44,87 @@ const initialMeals: Meal[] = [
   { id: "5", name: "Jantar", items: [] },
 ];
 
+// gera uma cópia "zerada" de refeições
+const createInitialMeals = (): Meal[] =>
+  baseMeals.map((m) => ({ ...m, items: [] }));
+
+type MealsState = {
+  mealsByUser: Record<string, Meal[]>;
+  initMealsForUser: (email: string) => void;
+  addMealItem: (email: string, mealId: string, item: MealItem) => void;
+  removeMealItem: (email: string, mealId: string, itemId: string) => void;
+};
+
+const useMealsStore = create<MealsState>((set) => ({
+  mealsByUser: {},
+
+  // garante que o usuário tenha um array de refeições inicializado
+  initMealsForUser: (email) =>
+    set((state) => {
+      if (state.mealsByUser[email]) return state; // já existe, não faz nada
+      return {
+        mealsByUser: {
+          ...state.mealsByUser,
+          [email]: createInitialMeals(),
+        },
+      };
+    }),
+
+  addMealItem: (email, mealId, item) =>
+    set((state) => {
+      const userMeals = state.mealsByUser[email] ?? createInitialMeals();
+      const updatedMeals = userMeals.map((m) =>
+        m.id === mealId ? { ...m, items: [item, ...m.items] } : m
+      );
+      return {
+        mealsByUser: {
+          ...state.mealsByUser,
+          [email]: updatedMeals,
+        },
+      };
+    }),
+
+  removeMealItem: (email, mealId, itemId) =>
+    set((state) => {
+      const userMeals = state.mealsByUser[email];
+      if (!userMeals) return state;
+      const updatedMeals = userMeals.map((m) =>
+        m.id === mealId
+          ? { ...m, items: m.items.filter((i) => i.id !== itemId) }
+          : m
+      );
+      return {
+        mealsByUser: {
+          ...state.mealsByUser,
+          [email]: updatedMeals,
+        },
+      };
+    }),
+}));
+
+/* ------------------------------------------------------------------ */
+
 export default function Home() {
   const router = useRouter();
   const { targets, consumed, remaining, addFood, removeFood } = useMacro();
+  const { user } = useDataStore();
+  const email = user.email || "__anon__"; // chave pra separar por usuário
 
+  const initMealsForUser = useMealsStore((s) => s.initMealsForUser);
+  const mealsState =
+    useMealsStore((s) => s.mealsByUser[email]) ?? createInitialMeals();
+  const addMealItem = useMealsStore((s) => s.addMealItem);
+  const removeMealItem = useMealsStore((s) => s.removeMealItem);
+
+  // inicializa refeições para esse usuário uma única vez
+  useEffect(() => {
+    initMealsForUser(email);
+  }, [email, initMealsForUser]);
+
+  console.log("CURRENT USER EMAIL:", email);
   console.log("TARGETS:", targets);
   console.log("REMAINING:", remaining);
   console.log("CONSUMED:", consumed);
-
-  const [mealsState, setMealsState] = useState<Meal[]>(initialMeals);
 
   // modal adicionar alimento
   const [modalVisible, setModalVisible] = useState(false);
@@ -143,7 +222,7 @@ export default function Home() {
       },
     });
 
-    // adiciona na refeição (UI)
+    // adiciona na refeição (UI) por usuário
     const portion = macrosForServing(selected.nutrientsPer100g || {}, g);
     const entry: MealItem = {
       id,
@@ -151,11 +230,8 @@ export default function Home() {
       grams: g,
       macros: portion,
     };
-    setMealsState((ms) =>
-      ms.map((m) =>
-        m.id === currentMeal.id ? { ...m, items: [entry, ...m.items] } : m
-      )
-    );
+
+    addMealItem(email, currentMeal.id, entry);
     setModalVisible(false);
   };
 
@@ -165,14 +241,10 @@ export default function Home() {
   };
 
   const removeItem = (mealId: string, itemId: string) => {
-    setMealsState((ms) =>
-      ms.map((m) => {
-        if (m.id !== mealId) return m;
-        // remove do contexto (barras atualizam)
-        removeFood(itemId);
-        return { ...m, items: m.items.filter((i) => i.id !== itemId) };
-      })
-    );
+    // remove do contexto (barras atualizam)
+    removeFood(itemId);
+    // remove da refeição do usuário atual
+    removeMealItem(email, mealId, itemId);
   };
 
   // helper de exibição (por porção/100g)
@@ -256,7 +328,7 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.title}>Macronutrientes</Text>
 
-        {/* Card: quanto falta hoje (sem chips, só barras) */}
+        {/* Card: quanto falta hoje */}
         {targets && remaining ? (
           <View style={styles.remainingCard}>
             <Text style={styles.remainingTitle}>Faltam hoje</Text>
@@ -364,7 +436,6 @@ export default function Home() {
             </View>
 
             <View style={{ flexDirection: "row" }}>
-              {/* ➕ abre o modal de adicionar com a busca */}
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => openAddModal(meal)}
@@ -402,7 +473,6 @@ export default function Home() {
               Adicionar alimento {currentMeal ? `— ${currentMeal.name}` : ""}
             </Text>
 
-            {/* Busca */}
             <View style={[styles.searchContainer, { marginBottom: 8 }]}>
               <MaterialIcons name="search" size={20} color="#0057C9" />
               <TextInput
@@ -417,7 +487,6 @@ export default function Home() {
               />
             </View>
 
-            {/* Resultados */}
             {error ? <Text style={{ color: "#ff6b6b" }}>{error}</Text> : null}
             <View style={{ maxHeight: 220 }}>
               {loading && results.length === 0 ? (
@@ -486,7 +555,6 @@ export default function Home() {
               )}
             </View>
 
-            {/* Selecionado + porção */}
             {selected && (
               <View style={{ marginTop: 10 }}>
                 <Text style={{ color: "#8ba7c4", marginBottom: 6 }}>
@@ -675,7 +743,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  // Card "Faltam hoje"
   remainingCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
@@ -715,7 +782,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Lista de refeições
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -747,7 +813,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Modal / busca
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

@@ -34,11 +34,17 @@ type MacroContextType = {
 
 const MacroContext = createContext<MacroContextType | undefined>(undefined);
 
+// --------------------------
 // Chaves de armazenamento
-const STORAGE_KEY = "macroData@v1";
-const USER_KEY = "macro_user_key@v1"; // identifica o usuário atual no armazenamento
+// --------------------------
+// Agora STORAGE_KEY guarda um MAPA por usuário:
+// { [userKey]: { profile, targets, foodsToday } }
+const STORAGE_KEY = "macroDataByUser@v2";
+const AUTH_USER_KEY = "@auth_user"; // onde você já salva o usuário do backend
 
+// --------------------------
 // Helpers de mapeamento (back->app)
+// --------------------------
 function mapLevelToAtividade(v?: string): UserProfile["atividade"] {
   const s = String(v ?? "").toLowerCase();
   if (s.includes("levemente") || s === "leve") return "leve";
@@ -86,72 +92,126 @@ function profileFromAuthUser(authUser: any | null): UserProfile | undefined {
   return { idade, altura, peso, sexo, atividade, objetivo };
 }
 
+// --------------------------
+// Provider
+// --------------------------
+type SavedUserMacroData = {
+  profile?: UserProfile;
+  targets?: MacroTargets;
+  foodsToday: LoggedFood[];
+};
+type SavedMacroMap = Record<string, SavedUserMacroData>;
+
 export function MacroProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<UserProfile>();
   const [targets, setTargets] = useState<MacroTargets>();
   const [foodsToday, setFoodsToday] = useState<LoggedFood[]>([]);
+  const [userKey, setUserKey] = useState<string | null>(null);
 
-  // Carrega estado salvo + detecta usuário do login
+  // Carrega estado salvo por usuário
   useEffect(() => {
     (async () => {
       try {
-        // 1) lê estado anterior (se houver)
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed?.profile) setProfileState(parsed.profile);
-          if (parsed?.targets) setTargets(parsed.targets);
-          if (Array.isArray(parsed?.foodsToday))
-            setFoodsToday(parsed.foodsToday);
+        // 1) lê mapa salvo
+        const savedStr = await AsyncStorage.getItem(STORAGE_KEY);
+        let savedMap: SavedMacroMap = {};
+        if (savedStr) {
+          try {
+            const parsed = JSON.parse(savedStr);
+            // se for formato antigo (um único objeto), ignora e começa novo
+            if (
+              parsed &&
+              typeof parsed === "object" &&
+              !Array.isArray(parsed)
+            ) {
+              if (
+                "profile" in parsed ||
+                "targets" in parsed ||
+                "foodsToday" in parsed
+              ) {
+                // formato antigo, joga fora ou migra se quiser
+                savedMap = {};
+              } else {
+                savedMap = parsed as SavedMacroMap;
+              }
+            }
+          } catch {
+            savedMap = {};
+          }
         }
 
-        // 2) lê usuário logado (@auth_user) e compara
-        const authStr = await AsyncStorage.getItem("@auth_user");
+        // 2) pega usuário logado do AsyncStorage (@auth_user)
+        const authStr = await AsyncStorage.getItem(AUTH_USER_KEY);
         const auth = authStr ? JSON.parse(authStr) : null;
-        const newKey =
-          auth?.id ?? auth?._id ?? auth?.email ?? auth?.user?.email ?? null;
+        const newKey: string =
+          auth?.id ?? auth?._id ?? auth?.email ?? auth?.user?.email ?? "anon";
 
-        const currentKey = await AsyncStorage.getItem(USER_KEY);
+        setUserKey(newKey);
 
-        // Se trocou de usuário OU não há targets, recalcula perfil a partir do cadastro
-        if (newKey && newKey !== currentKey) {
+        // 3) tenta carregar dados daquele usuário
+        let userData = savedMap[newKey];
+
+        // se não existir, monta a partir do cadastro
+        if (!userData) {
           const p = profileFromAuthUser(auth);
+          let t: MacroTargets | undefined;
           if (p) {
-            const t = calcMacroTargets(p);
-            setProfileState(p);
-            setTargets(t);
+            t = calcMacroTargets(p);
           }
-          // importante: zera os alimentos ao trocar de usuário
-          setFoodsToday([]);
-          await AsyncStorage.setItem(USER_KEY, String(newKey));
-        } else if (!targets) {
-          // primeira inicialização: tenta montar perfil dos dados do login
-          const p = profileFromAuthUser(auth);
-          if (p) {
-            const t = calcMacroTargets(p);
-            setProfileState(p);
-            setTargets(t);
-          }
+          userData = {
+            profile: p,
+            targets: t,
+            foodsToday: [],
+          };
+          savedMap[newKey] = userData;
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
         }
+
+        setProfileState(userData.profile);
+        if (userData.targets) setTargets(userData.targets);
+        setFoodsToday(
+          Array.isArray(userData.foodsToday) ? userData.foodsToday : []
+        );
       } catch (e) {
         console.log("❌ macroContext init error:", e);
       }
     })();
   }, []);
 
-  // Persiste sempre que mudar algo
+  // Persiste sempre que mudar algo para o usuário atual
   useEffect(() => {
+    if (!userKey) return;
     (async () => {
       try {
-        await AsyncStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ profile, targets, foodsToday })
-        );
+        const savedStr = await AsyncStorage.getItem(STORAGE_KEY);
+        let savedMap: SavedMacroMap = {};
+        if (savedStr) {
+          try {
+            const parsed = JSON.parse(savedStr);
+            if (
+              parsed &&
+              typeof parsed === "object" &&
+              !Array.isArray(parsed)
+            ) {
+              savedMap = parsed as SavedMacroMap;
+            }
+          } catch {
+            savedMap = {};
+          }
+        }
+
+        savedMap[userKey] = {
+          profile,
+          targets,
+          foodsToday,
+        };
+
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
       } catch (e) {
         console.log("❌ macroContext save error:", e);
       }
     })();
-  }, [profile, targets, foodsToday]);
+  }, [profile, targets, foodsToday, userKey]);
 
   // API do contexto
   const setProfile = (p: UserProfile) => {
