@@ -10,14 +10,11 @@ import {
   TextInput,
   Button,
   RefreshControl,
+  NativeModules,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useHealthConnectMetrics } from "../hooks/useHealthConnectMetrics";
-import {
-  Exercise,
-  CardioExercise,
-  StrengthExercise,
-} from "../types/exercise";
+import { Exercise, CardioExercise, StrengthExercise } from "../types/exercise";
+import { useSmartwatchCalories } from "../hooks/useSmartwatchCalories";
 
 export default function Fit() {
   const [exercises, setExercises] = useState<Exercise[]>([
@@ -31,6 +28,7 @@ export default function Fit() {
       minutes: 40,
     },
   ]);
+  console.log("NativeModules:", NativeModules);
 
   const weeklyGoal = 5;
   const completed = useMemo(
@@ -56,13 +54,7 @@ export default function Fit() {
   );
 
   // 👉 AGORA: dados vindos do Health Connect (Google Fit / Zepp / etc)
-  const {
-    calories,
-    steps,
-    loading,
-    error,
-    refresh,
-  } = useHealthConnectMetrics();
+  const { calories, steps, loading, error, refresh } = useSmartwatchCalories();
 
   // já carrega no primeiro render (hook faz isso, então aqui é opcional)
   useEffect(() => {
@@ -303,9 +295,7 @@ export default function Fit() {
             </View>
           ))}
           {strength.length === 0 && (
-            <Text style={styles.emptyText}>
-              Nenhum exercício de musculação
-            </Text>
+            <Text style={styles.emptyText}>Nenhum exercício de musculação</Text>
           )}
         </View>
 
