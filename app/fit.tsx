@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Exercise, CardioExercise, StrengthExercise } from "../types/exercise";
-import { useSmartwatchCalories } from "../hooks/useSmartwatchCalories";
+import { useGoogleFitMetrics } from "@/hooks/useGoogleFitMetrics";
 
 export default function Fit() {
   const [exercises, setExercises] = useState<Exercise[]>([
@@ -28,50 +28,45 @@ export default function Fit() {
       minutes: 40,
     },
   ]);
+
+  // Debug para detectar módulos nativos carregados
   console.log("NativeModules:", NativeModules);
 
+  // ------------------------------------------------------------------
+  // 🔥 HOOK do Google Fit / Health Connect
+  // ------------------------------------------------------------------
+  const { calories, steps, loading, error, reload } = useGoogleFitMetrics();
+
+  // ------------------------------------------------------------------
+  // 🔥 Corrigir o erro → refresh não existe, o certo é reload
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    reload();
+  }, []);
+
+  // ------------------------------------------------------------------
+  // MÉTRICAS COMPUTADAS
+  // ------------------------------------------------------------------
   const weeklyGoal = 5;
-  const completed = useMemo(
-    () => Math.min(weeklyGoal, Math.ceil(exercises.length / 2)),
-    [exercises.length]
-  );
+  const completed = Math.min(weeklyGoal, Math.ceil(exercises.length / 2));
+
+  const caloriesDisplay = Number.isFinite(calories) ? Math.round(calories) : 0;
+  const stepsDisplay = Number.isFinite(steps) ? Math.round(steps) : 0;
 
   const cardioGoal = 60;
-  const cardioDone = useMemo(
-    () =>
-      exercises
-        .filter((e) => e.type === "cardio")
-        .reduce((acc, e) => acc + e.minutes, 0),
-    [exercises]
-  );
+  const cardioDone = exercises
+    .filter((e) => e.type === "cardio")
+    .reduce((acc, e) => acc + e.minutes, 0);
 
-  const strengthDone = useMemo(
-    () =>
-      exercises
-        .filter((e) => e.type === "strength")
-        .reduce((acc, e) => acc + e.sets, 0),
-    [exercises]
-  );
+  const strengthDone = exercises
+    .filter((e) => e.type === "strength")
+    .reduce((acc, e) => acc + e.sets, 0);
 
-  // 👉 AGORA: dados vindos do Health Connect (Google Fit / Zepp / etc)
-  const { calories, steps, loading, error, refresh } = useSmartwatchCalories();
-
-  // já carrega no primeiro render (hook faz isso, então aqui é opcional)
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  const caloriesDisplay = useMemo(
-    () => (Number.isFinite(calories) ? Math.round(calories) : 0),
-    [calories]
-  );
-  const stepsDisplay = useMemo(
-    () => (Number.isFinite(steps) ? Math.round(steps) : 0),
-    [steps]
-  );
   const stepsGoal = 8000;
 
-  // Modal de novo exercício
+  // ------------------------------------------------------------------
+  // MODAL DE NOVO EXERCÍCIO
+  // ------------------------------------------------------------------
   const [modalVisible, setModalVisible] = useState(false);
   const [category, setCategory] = useState<"cardio" | "strength">("cardio");
   const [name, setName] = useState("Cardio");
@@ -93,6 +88,7 @@ export default function Fit() {
     if (category === "cardio") {
       const m = Number(minutes);
       if (!name.trim() || !Number.isFinite(m) || m <= 0) return;
+
       const ex: CardioExercise = {
         id: Math.random().toString(36).slice(2),
         name: name.trim(),
@@ -106,12 +102,13 @@ export default function Fit() {
       const m = Number(minutes) || undefined;
       if (
         !name.trim() ||
-        !Number.isFinite(s) ||
         s <= 0 ||
-        !Number.isFinite(r) ||
-        r <= 0
+        r <= 0 ||
+        !Number.isFinite(s) ||
+        !Number.isFinite(r)
       )
         return;
+
       const ex: StrengthExercise = {
         id: Math.random().toString(36).slice(2),
         name: name.trim(),
@@ -131,6 +128,9 @@ export default function Fit() {
   const cardio = exercises.filter((e) => e.type === "cardio");
   const strength = exercises.filter((e) => e.type === "strength");
 
+  // ------------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------------
   return (
     <View style={styles.containerOuter}>
       <ScrollView
@@ -138,14 +138,14 @@ export default function Fit() {
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={refresh}
+            onRefresh={reload}
             tintColor="#fff"
           />
         }
       >
         <Text style={styles.title}>Fitness</Text>
 
-        {/* Card principal com meta semanal + métricas */}
+        {/* Resumo semanal + métricas */}
         <View style={styles.mainCard}>
           <View style={styles.weekSummaryRow}>
             <View style={styles.weekChip}>
@@ -158,10 +158,11 @@ export default function Fit() {
           </View>
 
           <View style={styles.metricsRow}>
-            {/* Passos (👣) */}
+            {/* PASSOS */}
             <View style={styles.metricCard}>
               <Text style={styles.metricIcon}>👣</Text>
               <Text style={styles.metricLabel}>Passos</Text>
+
               <Text style={styles.metricValue}>
                 {loading
                   ? "..."
@@ -169,13 +170,15 @@ export default function Fit() {
                   ? "--"
                   : stepsDisplay.toLocaleString("pt-BR")}
               </Text>
+
               <Text style={styles.metricSub}>
                 {loading
-                  ? "Sincronizando Health Connect"
+                  ? "Sincronizando..."
                   : error
-                  ? "Não foi possível ler os passos"
+                  ? "Erro ao ler passos"
                   : `Meta ${stepsGoal.toLocaleString("pt-BR")} passos`}
               </Text>
+
               <View style={styles.progressBarBackground}>
                 <View
                   style={[
@@ -191,20 +194,23 @@ export default function Fit() {
               </View>
             </View>
 
-            {/* Calorias (🔥) */}
+            {/* CALORIAS */}
             <View style={styles.metricCard}>
               <Text style={styles.metricIcon}>🔥</Text>
               <Text style={styles.metricLabel}>Calorias</Text>
+
               <Text style={styles.metricValue}>
                 {loading ? "..." : error ? "--" : `${caloriesDisplay} kcal`}
               </Text>
+
               <Text style={styles.metricSub}>
                 {loading
-                  ? "Sincronizando Health Connect"
+                  ? "Sincronizando..."
                   : error
-                  ? "Não foi possível ler as calorias"
+                  ? "Erro ao ler calorias"
                   : "Meta 500 kcal"}
               </Text>
+
               <View style={styles.progressBarBackground}>
                 <View
                   style={[
@@ -224,7 +230,7 @@ export default function Fit() {
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
 
-        {/* Cardio */}
+        {/* ---------- CARDIO LIST ---------- */}
         <View style={styles.sectionHeaderRow}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Ionicons name="walk-outline" size={20} color="#4BC0C0" />
@@ -254,12 +260,13 @@ export default function Fit() {
               </TouchableOpacity>
             </View>
           ))}
+
           {cardio.length === 0 && (
             <Text style={styles.emptyText}>Nenhuma atividade de cardio</Text>
           )}
         </View>
 
-        {/* Musculação */}
+        {/* ---------- MUSCULAÇÃO ---------- */}
         <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Ionicons name="barbell-outline" size={20} color="#9B59B6" />
@@ -294,18 +301,14 @@ export default function Fit() {
               </TouchableOpacity>
             </View>
           ))}
+
           {strength.length === 0 && (
             <Text style={styles.emptyText}>Nenhum exercício de musculação</Text>
           )}
         </View>
 
-        {/* Modal de novo exercício */}
-        <Modal
-          transparent
-          visible={modalVisible}
-          animationType="fade"
-          onRequestClose={() => setModalVisible(false)}
-        >
+        {/* ---------- MODAL ---------- */}
+        <Modal transparent visible={modalVisible} animationType="fade">
           <View style={styles.modalBackground}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Novo exercício</Text>
@@ -320,6 +323,7 @@ export default function Fit() {
                 >
                   <Text style={styles.catButtonText}>Cardio</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => setCategory("strength")}
                   style={[
@@ -360,6 +364,7 @@ export default function Fit() {
                     keyboardType="numeric"
                     style={styles.modalInput}
                   />
+
                   <TextInput
                     placeholder="Repetições (ex: 12)"
                     placeholderTextColor="#888"
@@ -368,6 +373,7 @@ export default function Fit() {
                     keyboardType="numeric"
                     style={styles.modalInput}
                   />
+
                   <TextInput
                     placeholder="Minutos (opcional)"
                     placeholderTextColor="#888"
@@ -395,6 +401,9 @@ export default function Fit() {
   );
 }
 
+// --------------------------------------------------
+// STYLES
+// --------------------------------------------------
 const styles = StyleSheet.create({
   containerOuter: { flex: 1, backgroundColor: "#000" },
 
@@ -441,10 +450,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  smallHint: {
-    color: "#aaa",
-    fontSize: 12,
-  },
+  smallHint: { color: "#aaa", fontSize: 12 },
 
   metricsRow: {
     flexDirection: "row",
@@ -462,29 +468,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
   },
 
-  metricIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-
-  metricLabel: {
-    color: "#aaa",
-    fontSize: 13,
-  },
-
-  metricValue: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-
-  metricSub: {
-    color: "#888",
-    fontSize: 11,
-    marginTop: 2,
-    marginBottom: 6,
-  },
+  metricIcon: { fontSize: 24, marginBottom: 4 },
+  metricLabel: { color: "#aaa", fontSize: 13 },
+  metricValue: { color: "#fff", fontSize: 20, fontWeight: "700", marginTop: 4 },
+  metricSub: { color: "#888", fontSize: 11, marginTop: 2, marginBottom: 6 },
 
   progressBarBackground: {
     height: 6,
@@ -527,11 +514,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  sectionBadge: {
-    color: "#4BC0C0",
-    fontSize: 12,
-    marginBottom: 6,
-  },
+  sectionBadge: { color: "#4BC0C0", fontSize: 12, marginBottom: 6 },
 
   exerciseItem: {
     flexDirection: "row",
@@ -546,7 +529,6 @@ const styles = StyleSheet.create({
   },
 
   exerciseName: { color: "#fff", fontSize: 16, fontWeight: "600" },
-
   exerciseMeta: { color: "#aaa", marginTop: 2 },
 
   addButton: {
@@ -581,11 +563,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
-  modalTitle: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  modalTitle: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 
   modalInput: {
     borderWidth: 1,
@@ -617,10 +595,7 @@ const styles = StyleSheet.create({
 
   catButtonActive: { backgroundColor: "rgba(0,87,201,0.5)" },
 
-  catButtonText: {
-    color: "#fff",
-    fontWeight: "500",
-  },
+  catButtonText: { color: "#fff", fontWeight: "500" },
 
   modalButtonsRow: {
     flexDirection: "row",
