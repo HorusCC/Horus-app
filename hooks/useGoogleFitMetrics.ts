@@ -10,12 +10,19 @@ export function useGoogleFitMetrics() {
   async function load() {
     try {
       setLoading(true);
+      setError(null);
+
       const data = await getGoogleFitToday();
+      console.log("GoogleFit data:", data);
+
       setSteps(data.steps || 0);
       setCalories(data.calories || 0);
-    } catch (err) {
-      console.log(err);
-      setError(null);
+    } catch (err: any) {
+      console.log(
+        "Erro ao carregar métricas:",
+        err?.response?.data || err?.message || err
+      );
+      setError(err?.message || "Erro ao buscar dados do smartwatch");
     } finally {
       setLoading(false);
     }
