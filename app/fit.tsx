@@ -148,12 +148,6 @@ export default function Fit() {
         {/* Resumo semanal + métricas */}
         <View style={styles.mainCard}>
           <View style={styles.weekSummaryRow}>
-            <View style={styles.weekChip}>
-              <Ionicons name="calendar-outline" size={16} color="#fff" />
-              <Text style={styles.weekChipText}>
-                Semana: {completed}/{weeklyGoal} treinos
-              </Text>
-            </View>
             <Text style={styles.smallHint}>Continue se movimentando 🔥</Text>
           </View>
 
@@ -450,7 +444,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  smallHint: { color: "#aaa", fontSize: 12 },
+  smallHint: { color: "#aaa", fontSize: 14 },
 
   metricsRow: {
     flexDirection: "row",
