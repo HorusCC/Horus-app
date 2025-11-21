@@ -19,53 +19,74 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useDataStore } from "../store/data";
 import { apiApp } from "@/services/api";
 
-type FormData = z.infer<typeof schema>;
-
 const sexoValues = ["masculino", "feminino"] as const;
 const atividadeValues = ["sedentario", "leve", "moderado", "ativo"] as const;
 const objetivoValues = ["emagrecimento", "manutencao", "ganho_massa"] as const;
 
 const schema = z.object({
-  nome: z.string().min(2, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  nome: z
+    .string()
+    .min(2, { message: "Nome deve ter pelo menos 2 caracteres" })
+    .max(50, { message: "Nome muito longo" })
+    .trim()
+    .refine((val) => /^[A-Za-zÀ-ÿ ]+$/.test(val), {
+      message: "Nome deve conter apenas letras",
+    })
+    .refine((val) => !/\d/.test(val), {
+      message: "Nome não pode conter números",
+    })
+    .refine((val) => !val.includes("  "), {
+      message: "Nome não pode conter espaços duplos",
+    }),
+
   email: z.string().email({ message: "Email inválido" }),
+
   senha: z
     .string()
     .min(6, { message: "Senha deve ter pelo menos 6 caracteres" })
-    .max(100),
+    .max(100, { message: "Senha muito longa" }),
+
   idade: z
     .string()
     .refine(
       (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 100,
       {
-        message: "Idade deve ser um número positivo",
+        message: "Idade deve ser um número entre 1 e 99",
       }
     ),
+
   altura: z
     .string()
     .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 220,
+      (val) => !isNaN(Number(val)) && Number(val) >= 50 && Number(val) <= 250,
       {
-        message: "Altura deve ser um número positivo",
+        message: "Altura deve estar entre 50 e 250 cm",
       }
     ),
+
   peso: z
     .string()
     .refine(
-      (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 300,
+      (val) => !isNaN(Number(val)) && Number(val) >= 10 && Number(val) <= 300,
       {
-        message: "Peso deve ser um número positivo",
+        message: "Peso deve estar entre 10 e 300 kg",
       }
     ),
+
   sexo: z.string().refine((v) => sexoValues.includes(v as any), {
     message: "Selecione o sexo",
   }),
+
   atividade: z.string().refine((v) => atividadeValues.includes(v as any), {
     message: "Selecione a atividade",
   }),
+
   objetivo: z.string().refine((v) => objetivoValues.includes(v as any), {
     message: "Selecione o objetivo",
   }),
 });
+
+type FormData = z.infer<typeof schema>;
 
 const mapLevel = (v: string) => {
   switch (v) {
@@ -112,14 +133,16 @@ export default function CadastroPage() {
     tmb: number;
     classificacao: string;
   } | null>(null);
-  const { colors, theme } = useTheme();
+
+  const { colors } = useTheme();
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm({
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
+    mode: "onChange", // valida conforme digita
   });
 
   const genderOptions = [
@@ -156,9 +179,6 @@ export default function CadastroPage() {
 
     try {
       const res = await apiApp.post("/users", payload);
-      // se quiser salvar o user completo no zustand:
-      // useDataStore.getState().setUser(res.data);
-
       router.push("/login");
     } catch (err: any) {
       const msg =
@@ -221,6 +241,7 @@ export default function CadastroPage() {
         Preencha os dados abaixo para continuar
       </Text>
 
+      {/* NOME */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Nome</Text>
       <Input
         name="nome"
@@ -232,7 +253,10 @@ export default function CadastroPage() {
         placeholder="Digite seu nome:"
         value={nome}
         onChangeText={setNome}
+        error={errors.nome?.message}
       />
+
+      {/* EMAIL */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Email</Text>
       <Input
         name="email"
@@ -244,7 +268,10 @@ export default function CadastroPage() {
         placeholder="Digite seu email:"
         value={email}
         onChangeText={setEmail}
+        error={errors.email?.message}
       />
+
+      {/* SENHA */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Senha</Text>
       <Input
         name="senha"
@@ -257,7 +284,10 @@ export default function CadastroPage() {
         value={senha}
         secureTextEntry
         onChangeText={setSenha}
+        error={errors.senha?.message}
       />
+
+      {/* IDADE */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Idade</Text>
       <Input
         name="idade"
@@ -270,7 +300,10 @@ export default function CadastroPage() {
         value={idade}
         keyboardType="numeric"
         onChangeText={setIdade}
+        error={errors.idade?.message}
       />
+
+      {/* ALTURA */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Altura</Text>
       <Input
         name="altura"
@@ -283,7 +316,10 @@ export default function CadastroPage() {
         value={altura}
         keyboardType="numeric"
         onChangeText={setAltura}
+        error={errors.altura?.message}
       />
+
+      {/* PESO */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Peso</Text>
       <Input
         name="peso"
@@ -296,16 +332,14 @@ export default function CadastroPage() {
         value={peso}
         keyboardType="numeric"
         onChangeText={setPeso}
+        error={errors.peso?.message}
       />
 
+      {/* SEXO */}
       <Text style={[styles.label, { color: colors.textRegister }]}>Sexo</Text>
-      <Select
-        name="sexo"
-        control={control}
-        options={genderOptions}
-        error={errors.sexo?.message}
-      />
+      <Select name="sexo" control={control} options={genderOptions} />
 
+      {/* ATIVIDADE */}
       <Text style={[styles.label, { color: colors.textRegister }]}>
         Atividade Física
       </Text>
@@ -320,6 +354,7 @@ export default function CadastroPage() {
         ]}
       />
 
+      {/* OBJETIVO */}
       <Text style={[styles.label, { color: colors.textRegister }]}>
         Objetivo
       </Text>
@@ -434,5 +469,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  errorText: {
+    color: "#ff4d4d",
+    fontSize: 12,
+    marginBottom: 8,
   },
 });
